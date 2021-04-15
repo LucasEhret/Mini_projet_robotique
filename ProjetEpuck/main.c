@@ -14,13 +14,50 @@
 
 #include <pi_regulator.h>
 #include <process_image.h>
+#include <leds.h>
+#include <selector.h>
 
-void SendUint8ToComputer(uint8_t* data, uint16_t size) 
+//static BSEMAPHORE_DECL(sendToComputer_sem, TRUE);
+
+static THD_WORKING_AREA(selector_thd_wa, 1024);
+static THD_FUNCTION(selector_thd, arg)
 {
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&size, sizeof(uint16_t));
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
+    (void) arg;
+    chRegSetThreadName(__FUNCTION__);
+
+
+    uint8_t position_select = 0;
+    uint8_t new_position_select = 0;
+
+    while(1){
+    	//detection de changement de position du selecteur
+    	new_position_select = get_selector();
+    	if (position_select != new_position_select){
+    		position_select = new_position_select;
+			switch(position_select) {
+						case 0: //mode attente
+							clear_leds();
+							set_led(LED1, 1);
+							break;
+						case 1: //mode 1 : conduite respectueuse
+							clear_leds();
+							set_led(LED3, 1);
+							break;
+						case 2: //mode 2 : mode Tom Cruise
+							clear_leds();
+							set_led(LED5, 1);
+							break;
+						case 3: //mode 3 : mode manette
+							clear_leds();
+							set_led(LED7, 1);
+							break;
+						default :
+							clear_leds();
+			}
+        }
+    }
 }
+
 
 static void serial_start(void)
 {
@@ -50,15 +87,21 @@ int main(void)
 	po8030_start();
 	//inits the motors
 	motors_init();
+	//init leds
+	clear_leds();
+	set_body_led(0);
+	set_front_led(0);
 
 	//stars the threads for the pi regulator and the processing of the image
-	pi_regulator_start();
-	process_image_start();
+//	pi_regulator_start();
+//	process_image_start();
+
+	chThdCreateStatic(selector_thd_wa, sizeof(selector_thd_wa), NORMALPRIO + 1, selector_thd, NULL);
 
     /* Infinite loop. */
     while (1) {
     	//waits 1 second
-        chThdSleepMilliseconds(1000);
+        chThdSleepMilliseconds(100);
     }
 }
 
