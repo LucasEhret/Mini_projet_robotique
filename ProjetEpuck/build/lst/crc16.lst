@@ -1,0 +1,627 @@
+ARM GAS  C:\Users\Megaport\AppData\Local\Temp\cca2hcLs.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.eabi_attribute 27, 1
+   3              		.eabi_attribute 28, 1
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 6
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"crc16.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.section	.text.crc16,"ax",%progbits
+  18              		.align	1
+  19              		.p2align 4,,15
+  20              		.global	crc16
+  21              		.syntax unified
+  22              		.thumb
+  23              		.thumb_func
+  24              		.fpu fpv4-sp-d16
+  25              		.type	crc16, %function
+  26              	crc16:
+  27              	.LFB0:
+  28              		.file 1 "../e-puck2_main-processor/src/crc/crc16.c"
+  29              		.loc 1 8 0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 32
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+  33 0000 00B5     		push	{lr}
+  34              		.cfi_def_cfa_offset 4
+  35              		.cfi_offset 14, -4
+  36 0002 89B0     		sub	sp, sp, #36
+  37              		.cfi_def_cfa_offset 40
+  38 0004 0346     		mov	r3, r0
+  39 0006 0291     		str	r1, [sp, #8]
+  40 0008 0192     		str	r2, [sp, #4]
+  41 000a ADF80E30 		strh	r3, [sp, #14]	@ movhi
+  42              		.loc 1 8 0
+  43 000e 214B     		ldr	r3, .L10
+  44 0010 1B68     		ldr	r3, [r3]
+  45 0012 0793     		str	r3, [sp, #28]
+  46              		.loc 1 9 0
+  47 0014 029B     		ldr	r3, [sp, #8]
+  48 0016 0593     		str	r3, [sp, #20]
+  49              		.loc 1 10 0
+  50 0018 BDF80E30 		ldrh	r3, [sp, #14]	@ movhi
+  51 001c ADF81230 		strh	r3, [sp, #18]	@ movhi
+  52              		.loc 1 11 0
+  53 0020 26E0     		b	.L2
+  54              	.L7:
+  55              	.LBB2:
+  56              		.loc 1 13 0
+  57 0022 059B     		ldr	r3, [sp, #20]
+ARM GAS  C:\Users\Megaport\AppData\Local\Temp\cca2hcLs.s 			page 2
+
+
+  58 0024 5A1C     		adds	r2, r3, #1
+  59 0026 0592     		str	r2, [sp, #20]
+  60 0028 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+  61 002a 9AB2     		uxth	r2, r3
+  62 002c BDF81230 		ldrh	r3, [sp, #18]	@ movhi
+  63 0030 5340     		eors	r3, r3, r2
+  64 0032 ADF81230 		strh	r3, [sp, #18]	@ movhi
+  65              		.loc 1 14 0
+  66 0036 0023     		movs	r3, #0
+  67 0038 0693     		str	r3, [sp, #24]
+  68 003a 16E0     		b	.L3
+  69              	.L6:
+  70              		.loc 1 15 0
+  71 003c BDF81230 		ldrh	r3, [sp, #18]
+  72 0040 03F00103 		and	r3, r3, #1
+  73 0044 002B     		cmp	r3, #0
+  74 0046 08D0     		beq	.L4
+  75              		.loc 1 16 0
+  76 0048 BDF81230 		ldrh	r3, [sp, #18]
+  77 004c 5B08     		lsrs	r3, r3, #1
+  78 004e 9AB2     		uxth	r2, r3
+  79 0050 114B     		ldr	r3, .L10+4
+  80 0052 5340     		eors	r3, r3, r2
+  81 0054 ADF81230 		strh	r3, [sp, #18]	@ movhi
+  82 0058 04E0     		b	.L5
+  83              	.L4:
+  84              		.loc 1 18 0
+  85 005a BDF81230 		ldrh	r3, [sp, #18]
+  86 005e 5B08     		lsrs	r3, r3, #1
+  87 0060 ADF81230 		strh	r3, [sp, #18]	@ movhi
+  88              	.L5:
+  89              		.loc 1 14 0 discriminator 2
+  90 0064 069B     		ldr	r3, [sp, #24]
+  91 0066 0133     		adds	r3, r3, #1
+  92 0068 0693     		str	r3, [sp, #24]
+  93              	.L3:
+  94              		.loc 1 14 0 is_stmt 0 discriminator 1
+  95 006a 069B     		ldr	r3, [sp, #24]
+  96 006c 072B     		cmp	r3, #7
+  97 006e E5DD     		ble	.L6
+  98              	.L2:
+  99              	.LBE2:
+ 100              		.loc 1 11 0 is_stmt 1
+ 101 0070 019B     		ldr	r3, [sp, #4]
+ 102 0072 5A1E     		subs	r2, r3, #1
+ 103 0074 0192     		str	r2, [sp, #4]
+ 104 0076 002B     		cmp	r3, #0
+ 105 0078 D3D1     		bne	.L7
+ 106              		.loc 1 22 0
+ 107 007a BDF81230 		ldrh	r3, [sp, #18]
+ 108              		.loc 1 23 0
+ 109 007e 1846     		mov	r0, r3
+ 110 0080 044B     		ldr	r3, .L10
+ 111 0082 079A     		ldr	r2, [sp, #28]
+ 112 0084 1B68     		ldr	r3, [r3]
+ 113 0086 9A42     		cmp	r2, r3
+ 114 0088 01D0     		beq	.L9
+ARM GAS  C:\Users\Megaport\AppData\Local\Temp\cca2hcLs.s 			page 3
+
+
+ 115 008a FFF7FEFF 		bl	__stack_chk_fail
+ 116              	.L9:
+ 117 008e 09B0     		add	sp, sp, #36
+ 118              		.cfi_def_cfa_offset 4
+ 119              		@ sp needed
+ 120 0090 5DF804FB 		ldr	pc, [sp], #4
+ 121              	.L11:
+ 122              		.align	2
+ 123              	.L10:
+ 124 0094 00000000 		.word	__stack_chk_guard
+ 125 0098 01A0FFFF 		.word	-24575
+ 126              		.cfi_endproc
+ 127              	.LFE0:
+ 128              		.size	crc16, .-crc16
+ 129              		.text
+ 130              	.Letext0:
+ 131              		.file 2 "c:\\users\\megaport\\documents\\eclipse_e-puck2\\eclipse_e-puck2\\tools\\gcc-arm-none-eab
+ 132              		.file 3 "c:\\users\\megaport\\documents\\eclipse_e-puck2\\eclipse_e-puck2\\tools\\gcc-arm-none-eab
+ 133              		.file 4 "c:\\users\\megaport\\documents\\eclipse_e-puck2\\eclipse_e-puck2\\tools\\gcc-arm-none-eab
+ 134              		.section	.debug_info,"",%progbits
+ 135              	.Ldebug_info0:
+ 136 0000 27010000 		.4byte	0x127
+ 137 0004 0400     		.2byte	0x4
+ 138 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 139 000a 04       		.byte	0x4
+ 140 000b 01       		.uleb128 0x1
+ 141 000c F6000000 		.4byte	.LASF18
+ 142 0010 0C       		.byte	0xc
+ 143 0011 3A020000 		.4byte	.LASF19
+ 144 0015 85000000 		.4byte	.LASF20
+ 145 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 146 001d 00000000 		.4byte	0
+ 147 0021 00000000 		.4byte	.Ldebug_line0
+ 148 0025 02       		.uleb128 0x2
+ 149 0026 01       		.byte	0x1
+ 150 0027 06       		.byte	0x6
+ 151 0028 7F020000 		.4byte	.LASF0
+ 152 002c 03       		.uleb128 0x3
+ 153 002d 00000000 		.4byte	.LASF3
+ 154 0031 02       		.byte	0x2
+ 155 0032 2B       		.byte	0x2b
+ 156 0033 37000000 		.4byte	0x37
+ 157 0037 02       		.uleb128 0x2
+ 158 0038 01       		.byte	0x1
+ 159 0039 08       		.byte	0x8
+ 160 003a 1B000000 		.4byte	.LASF1
+ 161 003e 02       		.uleb128 0x2
+ 162 003f 02       		.byte	0x2
+ 163 0040 05       		.byte	0x5
+ 164 0041 EC000000 		.4byte	.LASF2
+ 165 0045 03       		.uleb128 0x3
+ 166 0046 4E000000 		.4byte	.LASF4
+ 167 004a 02       		.byte	0x2
+ 168 004b 39       		.byte	0x39
+ 169 004c 50000000 		.4byte	0x50
+ 170 0050 02       		.uleb128 0x2
+ 171 0051 02       		.byte	0x2
+ARM GAS  C:\Users\Megaport\AppData\Local\Temp\cca2hcLs.s 			page 4
+
+
+ 172 0052 07       		.byte	0x7
+ 173 0053 3B000000 		.4byte	.LASF5
+ 174 0057 02       		.uleb128 0x2
+ 175 0058 04       		.byte	0x4
+ 176 0059 05       		.byte	0x5
+ 177 005a 6A020000 		.4byte	.LASF6
+ 178 005e 02       		.uleb128 0x2
+ 179 005f 04       		.byte	0x4
+ 180 0060 07       		.byte	0x7
+ 181 0061 29000000 		.4byte	.LASF7
+ 182 0065 02       		.uleb128 0x2
+ 183 0066 08       		.byte	0x8
+ 184 0067 05       		.byte	0x5
+ 185 0068 D5000000 		.4byte	.LASF8
+ 186 006c 02       		.uleb128 0x2
+ 187 006d 08       		.byte	0x8
+ 188 006e 07       		.byte	0x7
+ 189 006f 66000000 		.4byte	.LASF9
+ 190 0073 04       		.uleb128 0x4
+ 191 0074 04       		.byte	0x4
+ 192 0075 05       		.byte	0x5
+ 193 0076 696E7400 		.ascii	"int\000"
+ 194 007a 02       		.uleb128 0x2
+ 195 007b 04       		.byte	0x4
+ 196 007c 07       		.byte	0x7
+ 197 007d 59000000 		.4byte	.LASF10
+ 198 0081 03       		.uleb128 0x3
+ 199 0082 7D000000 		.4byte	.LASF11
+ 200 0086 03       		.byte	0x3
+ 201 0087 18       		.byte	0x18
+ 202 0088 2C000000 		.4byte	0x2c
+ 203 008c 03       		.uleb128 0x3
+ 204 008d E3000000 		.4byte	.LASF12
+ 205 0091 03       		.byte	0x3
+ 206 0092 24       		.byte	0x24
+ 207 0093 45000000 		.4byte	0x45
+ 208 0097 03       		.uleb128 0x3
+ 209 0098 0A000000 		.4byte	.LASF13
+ 210 009c 04       		.byte	0x4
+ 211 009d D8       		.byte	0xd8
+ 212 009e 7A000000 		.4byte	0x7a
+ 213 00a2 02       		.uleb128 0x2
+ 214 00a3 08       		.byte	0x8
+ 215 00a4 04       		.byte	0x4
+ 216 00a5 73020000 		.4byte	.LASF14
+ 217 00a9 05       		.uleb128 0x5
+ 218 00aa 64020000 		.4byte	.LASF21
+ 219 00ae 01       		.byte	0x1
+ 220 00af 07       		.byte	0x7
+ 221 00b0 8C000000 		.4byte	0x8c
+ 222 00b4 00000000 		.4byte	.LFB0
+ 223 00b8 9C000000 		.4byte	.LFE0-.LFB0
+ 224 00bc 01       		.uleb128 0x1
+ 225 00bd 9C       		.byte	0x9c
+ 226 00be 1D010000 		.4byte	0x11d
+ 227 00c2 06       		.uleb128 0x6
+ 228 00c3 11000000 		.4byte	.LASF15
+ARM GAS  C:\Users\Megaport\AppData\Local\Temp\cca2hcLs.s 			page 5
+
+
+ 229 00c7 01       		.byte	0x1
+ 230 00c8 07       		.byte	0x7
+ 231 00c9 8C000000 		.4byte	0x8c
+ 232 00cd 02       		.uleb128 0x2
+ 233 00ce 91       		.byte	0x91
+ 234 00cf 66       		.sleb128 -26
+ 235 00d0 06       		.uleb128 0x6
+ 236 00d1 16000000 		.4byte	.LASF16
+ 237 00d5 01       		.byte	0x1
+ 238 00d6 07       		.byte	0x7
+ 239 00d7 1D010000 		.4byte	0x11d
+ 240 00db 02       		.uleb128 0x2
+ 241 00dc 91       		.byte	0x91
+ 242 00dd 60       		.sleb128 -32
+ 243 00de 06       		.uleb128 0x6
+ 244 00df 8B020000 		.4byte	.LASF17
+ 245 00e3 01       		.byte	0x1
+ 246 00e4 07       		.byte	0x7
+ 247 00e5 97000000 		.4byte	0x97
+ 248 00e9 02       		.uleb128 0x2
+ 249 00ea 91       		.byte	0x91
+ 250 00eb 5C       		.sleb128 -36
+ 251 00ec 07       		.uleb128 0x7
+ 252 00ed 7000     		.ascii	"p\000"
+ 253 00ef 01       		.byte	0x1
+ 254 00f0 09       		.byte	0x9
+ 255 00f1 24010000 		.4byte	0x124
+ 256 00f5 02       		.uleb128 0x2
+ 257 00f6 91       		.byte	0x91
+ 258 00f7 6C       		.sleb128 -20
+ 259 00f8 07       		.uleb128 0x7
+ 260 00f9 63726300 		.ascii	"crc\000"
+ 261 00fd 01       		.byte	0x1
+ 262 00fe 0A       		.byte	0xa
+ 263 00ff 8C000000 		.4byte	0x8c
+ 264 0103 02       		.uleb128 0x2
+ 265 0104 91       		.byte	0x91
+ 266 0105 6A       		.sleb128 -22
+ 267 0106 08       		.uleb128 0x8
+ 268 0107 22000000 		.4byte	.LBB2
+ 269 010b 4E000000 		.4byte	.LBE2-.LBB2
+ 270 010f 07       		.uleb128 0x7
+ 271 0110 6900     		.ascii	"i\000"
+ 272 0112 01       		.byte	0x1
+ 273 0113 0C       		.byte	0xc
+ 274 0114 73000000 		.4byte	0x73
+ 275 0118 02       		.uleb128 0x2
+ 276 0119 91       		.byte	0x91
+ 277 011a 70       		.sleb128 -16
+ 278 011b 00       		.byte	0
+ 279 011c 00       		.byte	0
+ 280 011d 09       		.uleb128 0x9
+ 281 011e 04       		.byte	0x4
+ 282 011f 23010000 		.4byte	0x123
+ 283 0123 0A       		.uleb128 0xa
+ 284 0124 09       		.uleb128 0x9
+ 285 0125 04       		.byte	0x4
+ARM GAS  C:\Users\Megaport\AppData\Local\Temp\cca2hcLs.s 			page 6
+
+
+ 286 0126 81000000 		.4byte	0x81
+ 287 012a 00       		.byte	0
+ 288              		.section	.debug_abbrev,"",%progbits
+ 289              	.Ldebug_abbrev0:
+ 290 0000 01       		.uleb128 0x1
+ 291 0001 11       		.uleb128 0x11
+ 292 0002 01       		.byte	0x1
+ 293 0003 25       		.uleb128 0x25
+ 294 0004 0E       		.uleb128 0xe
+ 295 0005 13       		.uleb128 0x13
+ 296 0006 0B       		.uleb128 0xb
+ 297 0007 03       		.uleb128 0x3
+ 298 0008 0E       		.uleb128 0xe
+ 299 0009 1B       		.uleb128 0x1b
+ 300 000a 0E       		.uleb128 0xe
+ 301 000b 55       		.uleb128 0x55
+ 302 000c 17       		.uleb128 0x17
+ 303 000d 11       		.uleb128 0x11
+ 304 000e 01       		.uleb128 0x1
+ 305 000f 10       		.uleb128 0x10
+ 306 0010 17       		.uleb128 0x17
+ 307 0011 00       		.byte	0
+ 308 0012 00       		.byte	0
+ 309 0013 02       		.uleb128 0x2
+ 310 0014 24       		.uleb128 0x24
+ 311 0015 00       		.byte	0
+ 312 0016 0B       		.uleb128 0xb
+ 313 0017 0B       		.uleb128 0xb
+ 314 0018 3E       		.uleb128 0x3e
+ 315 0019 0B       		.uleb128 0xb
+ 316 001a 03       		.uleb128 0x3
+ 317 001b 0E       		.uleb128 0xe
+ 318 001c 00       		.byte	0
+ 319 001d 00       		.byte	0
+ 320 001e 03       		.uleb128 0x3
+ 321 001f 16       		.uleb128 0x16
+ 322 0020 00       		.byte	0
+ 323 0021 03       		.uleb128 0x3
+ 324 0022 0E       		.uleb128 0xe
+ 325 0023 3A       		.uleb128 0x3a
+ 326 0024 0B       		.uleb128 0xb
+ 327 0025 3B       		.uleb128 0x3b
+ 328 0026 0B       		.uleb128 0xb
+ 329 0027 49       		.uleb128 0x49
+ 330 0028 13       		.uleb128 0x13
+ 331 0029 00       		.byte	0
+ 332 002a 00       		.byte	0
+ 333 002b 04       		.uleb128 0x4
+ 334 002c 24       		.uleb128 0x24
+ 335 002d 00       		.byte	0
+ 336 002e 0B       		.uleb128 0xb
+ 337 002f 0B       		.uleb128 0xb
+ 338 0030 3E       		.uleb128 0x3e
+ 339 0031 0B       		.uleb128 0xb
+ 340 0032 03       		.uleb128 0x3
+ 341 0033 08       		.uleb128 0x8
+ 342 0034 00       		.byte	0
+ARM GAS  C:\Users\Megaport\AppData\Local\Temp\cca2hcLs.s 			page 7
+
+
+ 343 0035 00       		.byte	0
+ 344 0036 05       		.uleb128 0x5
+ 345 0037 2E       		.uleb128 0x2e
+ 346 0038 01       		.byte	0x1
+ 347 0039 3F       		.uleb128 0x3f
+ 348 003a 19       		.uleb128 0x19
+ 349 003b 03       		.uleb128 0x3
+ 350 003c 0E       		.uleb128 0xe
+ 351 003d 3A       		.uleb128 0x3a
+ 352 003e 0B       		.uleb128 0xb
+ 353 003f 3B       		.uleb128 0x3b
+ 354 0040 0B       		.uleb128 0xb
+ 355 0041 27       		.uleb128 0x27
+ 356 0042 19       		.uleb128 0x19
+ 357 0043 49       		.uleb128 0x49
+ 358 0044 13       		.uleb128 0x13
+ 359 0045 11       		.uleb128 0x11
+ 360 0046 01       		.uleb128 0x1
+ 361 0047 12       		.uleb128 0x12
+ 362 0048 06       		.uleb128 0x6
+ 363 0049 40       		.uleb128 0x40
+ 364 004a 18       		.uleb128 0x18
+ 365 004b 9642     		.uleb128 0x2116
+ 366 004d 19       		.uleb128 0x19
+ 367 004e 01       		.uleb128 0x1
+ 368 004f 13       		.uleb128 0x13
+ 369 0050 00       		.byte	0
+ 370 0051 00       		.byte	0
+ 371 0052 06       		.uleb128 0x6
+ 372 0053 05       		.uleb128 0x5
+ 373 0054 00       		.byte	0
+ 374 0055 03       		.uleb128 0x3
+ 375 0056 0E       		.uleb128 0xe
+ 376 0057 3A       		.uleb128 0x3a
+ 377 0058 0B       		.uleb128 0xb
+ 378 0059 3B       		.uleb128 0x3b
+ 379 005a 0B       		.uleb128 0xb
+ 380 005b 49       		.uleb128 0x49
+ 381 005c 13       		.uleb128 0x13
+ 382 005d 02       		.uleb128 0x2
+ 383 005e 18       		.uleb128 0x18
+ 384 005f 00       		.byte	0
+ 385 0060 00       		.byte	0
+ 386 0061 07       		.uleb128 0x7
+ 387 0062 34       		.uleb128 0x34
+ 388 0063 00       		.byte	0
+ 389 0064 03       		.uleb128 0x3
+ 390 0065 08       		.uleb128 0x8
+ 391 0066 3A       		.uleb128 0x3a
+ 392 0067 0B       		.uleb128 0xb
+ 393 0068 3B       		.uleb128 0x3b
+ 394 0069 0B       		.uleb128 0xb
+ 395 006a 49       		.uleb128 0x49
+ 396 006b 13       		.uleb128 0x13
+ 397 006c 02       		.uleb128 0x2
+ 398 006d 18       		.uleb128 0x18
+ 399 006e 00       		.byte	0
+ARM GAS  C:\Users\Megaport\AppData\Local\Temp\cca2hcLs.s 			page 8
+
+
+ 400 006f 00       		.byte	0
+ 401 0070 08       		.uleb128 0x8
+ 402 0071 0B       		.uleb128 0xb
+ 403 0072 01       		.byte	0x1
+ 404 0073 11       		.uleb128 0x11
+ 405 0074 01       		.uleb128 0x1
+ 406 0075 12       		.uleb128 0x12
+ 407 0076 06       		.uleb128 0x6
+ 408 0077 00       		.byte	0
+ 409 0078 00       		.byte	0
+ 410 0079 09       		.uleb128 0x9
+ 411 007a 0F       		.uleb128 0xf
+ 412 007b 00       		.byte	0
+ 413 007c 0B       		.uleb128 0xb
+ 414 007d 0B       		.uleb128 0xb
+ 415 007e 49       		.uleb128 0x49
+ 416 007f 13       		.uleb128 0x13
+ 417 0080 00       		.byte	0
+ 418 0081 00       		.byte	0
+ 419 0082 0A       		.uleb128 0xa
+ 420 0083 26       		.uleb128 0x26
+ 421 0084 00       		.byte	0
+ 422 0085 00       		.byte	0
+ 423 0086 00       		.byte	0
+ 424 0087 00       		.byte	0
+ 425              		.section	.debug_aranges,"",%progbits
+ 426 0000 1C000000 		.4byte	0x1c
+ 427 0004 0200     		.2byte	0x2
+ 428 0006 00000000 		.4byte	.Ldebug_info0
+ 429 000a 04       		.byte	0x4
+ 430 000b 00       		.byte	0
+ 431 000c 0000     		.2byte	0
+ 432 000e 0000     		.2byte	0
+ 433 0010 00000000 		.4byte	.LFB0
+ 434 0014 9C000000 		.4byte	.LFE0-.LFB0
+ 435 0018 00000000 		.4byte	0
+ 436 001c 00000000 		.4byte	0
+ 437              		.section	.debug_ranges,"",%progbits
+ 438              	.Ldebug_ranges0:
+ 439 0000 00000000 		.4byte	.LFB0
+ 440 0004 9C000000 		.4byte	.LFE0
+ 441 0008 00000000 		.4byte	0
+ 442 000c 00000000 		.4byte	0
+ 443              		.section	.debug_line,"",%progbits
+ 444              	.Ldebug_line0:
+ 445 0000 34020000 		.section	.debug_str,"MS",%progbits,1
+ 445      02000702 
+ 445      00000201 
+ 445      FB0E0D00 
+ 445      01010101 
+ 446              	.LASF3:
+ 447 0000 5F5F7569 		.ascii	"__uint8_t\000"
+ 447      6E74385F 
+ 447      7400
+ 448              	.LASF13:
+ 449 000a 73697A65 		.ascii	"size_t\000"
+ 449      5F7400
+ARM GAS  C:\Users\Megaport\AppData\Local\Temp\cca2hcLs.s 			page 9
+
+
+ 450              	.LASF15:
+ 451 0011 696E6974 		.ascii	"init\000"
+ 451      00
+ 452              	.LASF16:
+ 453 0016 64617461 		.ascii	"data\000"
+ 453      00
+ 454              	.LASF1:
+ 455 001b 756E7369 		.ascii	"unsigned char\000"
+ 455      676E6564 
+ 455      20636861 
+ 455      7200
+ 456              	.LASF7:
+ 457 0029 6C6F6E67 		.ascii	"long unsigned int\000"
+ 457      20756E73 
+ 457      69676E65 
+ 457      6420696E 
+ 457      7400
+ 458              	.LASF5:
+ 459 003b 73686F72 		.ascii	"short unsigned int\000"
+ 459      7420756E 
+ 459      7369676E 
+ 459      65642069 
+ 459      6E7400
+ 460              	.LASF4:
+ 461 004e 5F5F7569 		.ascii	"__uint16_t\000"
+ 461      6E743136 
+ 461      5F7400
+ 462              	.LASF10:
+ 463 0059 756E7369 		.ascii	"unsigned int\000"
+ 463      676E6564 
+ 463      20696E74 
+ 463      00
+ 464              	.LASF9:
+ 465 0066 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 465      206C6F6E 
+ 465      6720756E 
+ 465      7369676E 
+ 465      65642069 
+ 466              	.LASF11:
+ 467 007d 75696E74 		.ascii	"uint8_t\000"
+ 467      385F7400 
+ 468              	.LASF20:
+ 469 0085 433A5C55 		.ascii	"C:\\Users\\Megaport\\Documents\\EPFL\\BA6\\Robotiqu"
+ 469      73657273 
+ 469      5C4D6567 
+ 469      61706F72 
+ 469      745C446F 
+ 470 00b2 655C4D69 		.ascii	"e\\MiniProjet_robotique\\ProjetEpuck\000"
+ 470      6E695072 
+ 470      6F6A6574 
+ 470      5F726F62 
+ 470      6F746971 
+ 471              	.LASF8:
+ 472 00d5 6C6F6E67 		.ascii	"long long int\000"
+ 472      206C6F6E 
+ 472      6720696E 
+ 472      7400
+ARM GAS  C:\Users\Megaport\AppData\Local\Temp\cca2hcLs.s 			page 10
+
+
+ 473              	.LASF12:
+ 474 00e3 75696E74 		.ascii	"uint16_t\000"
+ 474      31365F74 
+ 474      00
+ 475              	.LASF2:
+ 476 00ec 73686F72 		.ascii	"short int\000"
+ 476      7420696E 
+ 476      7400
+ 477              	.LASF18:
+ 478 00f6 474E5520 		.ascii	"GNU C11 7.2.1 20170904 (release) [ARM/embedded-7-br"
+ 478      43313120 
+ 478      372E322E 
+ 478      31203230 
+ 478      31373039 
+ 479 0129 616E6368 		.ascii	"anch revision 255204] -mcpu=cortex-m4 -mfloat-abi=h"
+ 479      20726576 
+ 479      6973696F 
+ 479      6E203235 
+ 479      35323034 
+ 480 015c 61726420 		.ascii	"ard -mfpu=fpv4-sp-d16 -mno-thumb-interwork -mthumb "
+ 480      2D6D6670 
+ 480      753D6670 
+ 480      76342D73 
+ 480      702D6431 
+ 481 018f 2D676764 		.ascii	"-ggdb -O0 -fomit-frame-pointer -falign-functions=16"
+ 481      62202D4F 
+ 481      30202D66 
+ 481      6F6D6974 
+ 481      2D667261 
+ 482 01c2 202D666E 		.ascii	" -fno-strict-aliasing -fstack-protector-all -ffunct"
+ 482      6F2D7374 
+ 482      72696374 
+ 482      2D616C69 
+ 482      6173696E 
+ 483 01f5 696F6E2D 		.ascii	"ion-sections -fdata-sections -fno-common -fsingle-p"
+ 483      73656374 
+ 483      696F6E73 
+ 483      202D6664 
+ 483      6174612D 
+ 484 0228 72656369 		.ascii	"recision-constant\000"
+ 484      73696F6E 
+ 484      2D636F6E 
+ 484      7374616E 
+ 484      7400
+ 485              	.LASF19:
+ 486 023a 2E2E2F65 		.ascii	"../e-puck2_main-processor/src/crc/crc16.c\000"
+ 486      2D707563 
+ 486      6B325F6D 
+ 486      61696E2D 
+ 486      70726F63 
+ 487              	.LASF21:
+ 488 0264 63726331 		.ascii	"crc16\000"
+ 488      3600
+ 489              	.LASF6:
+ 490 026a 6C6F6E67 		.ascii	"long int\000"
+ 490      20696E74 
+ 490      00
+ARM GAS  C:\Users\Megaport\AppData\Local\Temp\cca2hcLs.s 			page 11
+
+
+ 491              	.LASF14:
+ 492 0273 6C6F6E67 		.ascii	"long double\000"
+ 492      20646F75 
+ 492      626C6500 
+ 493              	.LASF0:
+ 494 027f 7369676E 		.ascii	"signed char\000"
+ 494      65642063 
+ 494      68617200 
+ 495              	.LASF17:
+ 496 028b 6C656E67 		.ascii	"length\000"
+ 496      746800
+ 497              		.ident	"GCC: (GNU Tools for Arm Embedded Processors 7-2017-q4-major) 7.2.1 20170904 (release) [ARM
+ARM GAS  C:\Users\Megaport\AppData\Local\Temp\cca2hcLs.s 			page 12
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 crc16.c
+C:\Users\Megaport\AppData\Local\Temp\cca2hcLs.s:18     .text.crc16:00000000 $t
+C:\Users\Megaport\AppData\Local\Temp\cca2hcLs.s:26     .text.crc16:00000000 crc16
+C:\Users\Megaport\AppData\Local\Temp\cca2hcLs.s:124    .text.crc16:00000094 $d
+
+UNDEFINED SYMBOLS
+__stack_chk_fail
+__stack_chk_guard
