@@ -40,21 +40,23 @@ static THD_FUNCTION(selector_thd, arg)
 							clear_leds();
 							set_led(LED1, 1);
 							break;
-						case 1: //mode 1 : conduite respectueuse
+						case 2: //mode 1 : conduite respectueuse
 							clear_leds();
 							set_led(LED3, 1);
 							break;
-						case 2: //mode 2 : mode Tom Cruise
+						case 4: //mode 2 : mode Tom Cruise
 							clear_leds();
 							set_led(LED5, 1);
 							break;
-						case 3: //mode 3 : mode manette
+						case 6: //mode 3 : mode manette
 							clear_leds();
 							set_led(LED7, 1);
+//							set_body_led(2);
 							run_thread_manette();
 							break;
 						default :
 							clear_leds();
+							break;
 			}
         }
     }
@@ -98,7 +100,7 @@ int main(void)
 //	pi_regulator_start();
 //	process_image_start();
 
-	chThdCreateStatic(selector_thd_wa, sizeof(selector_thd_wa), NORMALPRIO + 1, selector_thd, NULL);
+	chThdCreateStatic(selector_thd_wa, sizeof(selector_thd_wa), NORMALPRIO, selector_thd, NULL);
 
     /* Infinite loop. */
     while (1) {

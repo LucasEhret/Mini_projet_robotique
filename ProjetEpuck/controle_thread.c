@@ -7,6 +7,7 @@
 #include <main.h>
 #include <leds.h>
 #include <motors.h>
+#include <communications.h>
 
 #define NB_ELEMENTS_CONTROLLER 4
 
@@ -66,10 +67,12 @@ static THD_FUNCTION(thd_m3_capteur_distance, arg)
     (void) arg;
     chRegSetThreadName(__FUNCTION__);
 
+//    set_led(LED1, 1);
+
     //boucle infinie du thread
     while(chThdShouldTerminateX() == false){
-    	set_led(LED3, 1);
-    	short data_from_computer[NB_ELEMENTS_CONTROLLER];
+//    	set_led(LED3, 1);
+    	short data_from_computer[] = {0, 0, 0, 0};
     	uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, data_from_computer, NB_ELEMENTS_CONTROLLER);
     	if(size == NB_ELEMENTS_CONTROLLER){
     		data_from_computer[1] -= 180;
@@ -78,7 +81,7 @@ static THD_FUNCTION(thd_m3_capteur_distance, arg)
     		right_motor_set_speed(right_speed);
     		left_motor_set_speed(left_speed);
     	}
-    	chThdSleepMilliseconds(40);
+//    	chThdSleepMilliseconds(40);
     }
 }
 
@@ -92,6 +95,7 @@ void stop_thread(thread_t* thd_to_stop){
 
 
 void run_thread_manette(void){
-	set_led(LED1, 1);
+
+//    set_body_led(2);
 	chThdCreateStatic(thd_m3_capteur_distance_wa, sizeof(thd_m3_capteur_distance_wa), NORMALPRIO, thd_m3_capteur_distance, NULL);
 }
