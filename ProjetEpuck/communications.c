@@ -77,17 +77,16 @@ uint16_t ReceiveInt16FromComputer(BaseSequentialStream* in, float* data, uint16_
 	// -> number of int16_t data
 	temp_size = (int16_t)((c1 | c2<<8));
 
-	if((temp_size/2) == size){
-		for(i = 0 ; i < (temp_size/2) ; i++){
+	if(temp_size == size){
+		for(i = 0 ; i < temp_size ; i++){
 
 			c1 = chSequentialStreamGet(in);
 			c2 = chSequentialStreamGet(in);
 
-			data[i*2] = (int16_t)((c1 | c2<<8));	        //real
-			data[(i*2)+1] = 0;				//imaginary
+			data[i] = (int16_t)((c1 | c2<<8));
 		}
 	}
 
-	return temp_size/2;
+	return temp_size;
 
 }

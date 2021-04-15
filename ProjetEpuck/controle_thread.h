@@ -5,5 +5,6 @@
 #include "hal.h"
 
 void stop_thread(thread_t *thd_to_stop);
+void run_thread_manette(void);
 
 #endif

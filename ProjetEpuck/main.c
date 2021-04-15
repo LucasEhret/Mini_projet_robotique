@@ -16,6 +16,7 @@
 #include <process_image.h>
 #include <leds.h>
 #include <selector.h>
+#include <controle_thread.h>
 
 //static BSEMAPHORE_DECL(sendToComputer_sem, TRUE);
 
@@ -50,6 +51,7 @@ static THD_FUNCTION(selector_thd, arg)
 						case 3: //mode 3 : mode manette
 							clear_leds();
 							set_led(LED7, 1);
+							run_thread_manette();
 							break;
 						default :
 							clear_leds();

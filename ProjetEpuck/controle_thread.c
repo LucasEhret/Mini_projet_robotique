@@ -5,8 +5,13 @@
 #include "ch.h"
 #include "hal.h"
 #include <main.h>
+#include <leds.h>
+#include <motors.h>
 
-//thread qui utilise les capteurs de distance, et allume les leds les plus proches -> mode 0, rien d'autre se passe
+#define NB_ELEMENTS_CONTROLLER 4
+
+
+//thread qui utilise les capteurs de distance, et allume les leds les plus proches de l'objet détecté
 static THD_WORKING_AREA(thd_m0_capteur_distance_wa, 1024);
 static THD_FUNCTION(thd_m0_capteur_distance, arg)
 {
@@ -63,9 +68,17 @@ static THD_FUNCTION(thd_m3_capteur_distance, arg)
 
     //boucle infinie du thread
     while(chThdShouldTerminateX() == false){
-    	/*
-    	 * fonction a remplir
-    	 */
+    	set_led(LED3, 1);
+    	short data_from_computer[NB_ELEMENTS_CONTROLLER];
+    	uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, data_from_computer, NB_ELEMENTS_CONTROLLER);
+    	if(size == NB_ELEMENTS_CONTROLLER){
+    		data_from_computer[1] -= 180;
+    		int right_speed = (90-data_from_computer[1]) / 90 * 330 * data_from_computer[0] / 100;
+    		int left_speed = (-90-data_from_computer[1]) / (-90) * 330 * data_from_computer[0] / 100;
+    		right_motor_set_speed(right_speed);
+    		left_motor_set_speed(left_speed);
+    	}
+    	chThdSleepMilliseconds(40);
     }
 }
 
@@ -75,4 +88,10 @@ void stop_thread(thread_t* thd_to_stop){
 	chThdTerminate(thd_to_stop);
 	chThdWait(thd_to_stop);
 	thd_to_stop = NULL;
+}
+
+
+void run_thread_manette(void){
+	set_led(LED1, 1);
+	chThdCreateStatic(thd_m3_capteur_distance_wa, sizeof(thd_m3_capteur_distance_wa), NORMALPRIO, thd_m3_capteur_distance, NULL);
 }
