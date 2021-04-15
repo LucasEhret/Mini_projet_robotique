@@ -1,5 +1,7 @@
 # Prerequisites
 *.d
+.dmp
+.xml
 
 # Object files
 *.o
