@@ -1,3 +1,5 @@
+build
+
 # Prerequisites
 *.d
 .dmp
@@ -52,5 +54,3 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
-
-build
