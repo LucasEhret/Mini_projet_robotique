@@ -46,8 +46,8 @@ static THD_FUNCTION(thd_m0_capteur_distance, arg)
 
 
 //thread qui récupère les images de la caméra
-static THD_WORKING_AREA(thd_camera__wa, 1024);
-static THD_FUNCTION(thrd_camera, arg)
+static THD_WORKING_AREA(thd_m1_camera__wa, 1024);
+static THD_FUNCTION(thd_m1_camera, arg)
 {
     (void) arg;
     chRegSetThreadName(__FUNCTION__);
@@ -71,8 +71,10 @@ static THD_FUNCTION(thd_m1_capteur_distance, arg)
     //boucle infinie du thread
     while(chThdShouldTerminateX() == false){
     	/*
-    	 * fonction a remplir
+    	 * CONSTRUCTION EN COUR
     	 */
+
+
     }
 }
 
@@ -83,6 +85,32 @@ static THD_FUNCTION(thd_m1_capteur_distance, arg)
  * -> Suivi de la ligne noire (priorité normale)
  *               (réutilisation du thread du mode 1 mais avec une vitesse du robot plus élevée)
  */
+
+
+static THD_WORKING_AREA(thd_m2_camera__wa, 1024);
+static THD_FUNCTION(thd_m2_camera, arg)
+{
+    (void) arg;
+    chRegSetThreadName(__FUNCTION__);
+
+    //boucle infinie du thread
+    while(chThdShouldTerminateX() == false){
+    	/*
+    	 * fonction a remplir
+    	 */
+    }
+}
+
+
+
+
+//-------------------------------MODE 3-----------------------------------------------------------
+/* Threads propre au mode 3 : contrôle à la manette
+ *  -> Détection des obstacle (priorité +)
+ *  -> Réception manette      (priorité normale)
+ *
+ */
+
 
 
 //thread qui utilise les capteurs de distance pour faire un tour sur lui meme quand il rencontre un obstacle en mode manette
@@ -111,14 +139,19 @@ static THD_FUNCTION(thd_m3_capteur_distance, arg)
 }
 
 
+static THD_WORKING_AREA(thd_m3_recep_manette__wa, 1024);
+static THD_FUNCTION(thd_m3_recep_manette, arg)
+{
+    (void) arg;
+    chRegSetThreadName(__FUNCTION__);
 
-//-------------------------------MODE 3-----------------------------------------------------------
-/* Threads propre au mode 3 : contrôle à la manette
- *  -> Détection des obstacle (priorité +)
- *  -> Réception manette      (priorité normale)
- *
- */
-
+    //boucle infinie du thread
+    while(chThdShouldTerminateX() == false){
+    	/*
+    	 * fonction a remplir
+    	 */
+    }
+}
 
 
 
