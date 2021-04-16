@@ -12,6 +12,13 @@
 #define NB_ELEMENTS_CONTROLLER 4
 
 
+
+//-------------------------------MODE 0-----------------------------------------------------------
+/*Thread propre au mode 0 : attente
+ * 	-> petit jeu avec LEDs et capteurs de distance. (priorité normale)
+ */
+
+
 //thread qui utilise les capteurs de distance, et allume les leds les plus proches de l'objet détecté
 static THD_WORKING_AREA(thd_m0_capteur_distance_wa, 1024);
 static THD_FUNCTION(thd_m0_capteur_distance, arg)
@@ -26,6 +33,16 @@ static THD_FUNCTION(thd_m0_capteur_distance, arg)
     	 */
     }
 }
+
+
+
+//-------------------------------MODE 1-----------------------------------------------------------
+/* Threads propre au mode 1 : conduite respectueuse
+ *  -> Détection des obstacles  (priorité +)
+ *  -> Suivie de la ligne noire (priorité normale)
+ *  ->
+ *  ->
+ */
 
 
 //thread qui récupère les images de la caméra
@@ -60,6 +77,14 @@ static THD_FUNCTION(thd_m1_capteur_distance, arg)
 }
 
 
+
+//-------------------------------MODE 2-----------------------------------------------------------
+/* Threads propre au mode 2 : conduite Tom Cruise
+ * -> Suivi de la ligne noire (priorité normale)
+ *               (réutilisation du thread du mode 1 mais avec une vitesse du robot plus élevée)
+ */
+
+
 //thread qui utilise les capteurs de distance pour faire un tour sur lui meme quand il rencontre un obstacle en mode manette
 static THD_WORKING_AREA(thd_m3_capteur_distance_wa, 1024);
 static THD_FUNCTION(thd_m3_capteur_distance, arg)
@@ -86,6 +111,20 @@ static THD_FUNCTION(thd_m3_capteur_distance, arg)
 }
 
 
+
+//-------------------------------MODE 3-----------------------------------------------------------
+/* Threads propre au mode 3 : contrôle à la manette
+ *  -> Détection des obstacle (priorité +)
+ *  -> Réception manette      (priorité normale)
+ *
+ */
+
+
+
+
+
+
+//-----------------------------GESTION THREADS----------------------------------------
 
 void stop_thread(thread_t* thd_to_stop){
 	chThdTerminate(thd_to_stop);
