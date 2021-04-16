@@ -61,10 +61,11 @@ def sendFloatSerial(port, data_for_robot):
         send_buffer += struct.pack('<h', data[i])
         i = i + 1
 
-    port.write(b'START')
+    port.write(b'ABCD')
     port.write(struct.pack('<h', 2 * size[0]))  #2 car short = 2 bytes
     port.write(send_buffer)
     if display_data_controller:
+        print("size : ", struct.pack('<h', 2 * size[0]))
         print("buffer : ", send_buffer)
     print('sent !')
 

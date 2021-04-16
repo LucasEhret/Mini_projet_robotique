@@ -47,11 +47,11 @@ static THD_FUNCTION(selector_thd, arg)
 						case 4: //mode 2 : mode Tom Cruise
 							clear_leds();
 							set_led(LED5, 1);
+							stop_thread(3);
 							break;
 						case 6: //mode 3 : mode manette
 							clear_leds();
 							set_led(LED7, 1);
-//							set_body_led(2);
 							run_thread_manette();
 							break;
 						default :

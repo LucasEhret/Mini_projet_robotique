@@ -11,6 +11,10 @@
 
 #define NB_ELEMENTS_CONTROLLER 4
 
+static thread_t* thd_mode_0 = NULL;
+static thread_t* thd_mode_1 = NULL;
+static thread_t* thd_mode_2 = NULL;
+static thread_t* thd_mode_3 = NULL;
 
 
 //-------------------------------MODE 0-----------------------------------------------------------
@@ -120,12 +124,11 @@ static THD_FUNCTION(thd_m3_capteur_distance, arg)
     (void) arg;
     chRegSetThreadName(__FUNCTION__);
 
-//    set_led(LED1, 1);
 
     //boucle infinie du thread
     while(chThdShouldTerminateX() == false){
 //    	set_led(LED3, 1);
-    	short data_from_computer[] = {0, 0, 0, 0};
+    	float data_from_computer[4] = {0, 0, 0, 0};
     	uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, data_from_computer, NB_ELEMENTS_CONTROLLER);
     	if(size == NB_ELEMENTS_CONTROLLER){
     		data_from_computer[1] -= 180;
@@ -159,15 +162,38 @@ static THD_FUNCTION(thd_m3_recep_manette, arg)
 
 //-----------------------------GESTION THREADS----------------------------------------
 
-void stop_thread(thread_t* thd_to_stop){
-	chThdTerminate(thd_to_stop);
-	chThdWait(thd_to_stop);
-	thd_to_stop = NULL;
+void stop_thread(int mode_to_stop){
+	if (mode_to_stop == 0){
+		if (thd_mode_0 != NULL){
+			chThdTerminate(thd_mode_0);
+			chThdWait(thd_mode_0);
+			thd_mode_0 = NULL;
+		}
+	}
+	else if (mode_to_stop == 1){
+		if (thd_mode_1 != NULL){
+			chThdTerminate(thd_mode_1);
+			chThdWait(thd_mode_1);
+			thd_mode_1 = NULL;
+		}
+	}
+	else if (mode_to_stop == 2){
+		if (thd_mode_2 != NULL){
+			chThdTerminate(thd_mode_2);
+			chThdWait(thd_mode_2);
+			thd_mode_2 = NULL;
+		}
+	}
+	else if (mode_to_stop == 3){
+		if (thd_mode_3 != NULL){
+			chThdTerminate(thd_mode_3);
+			chThdWait(thd_mode_3);
+			thd_mode_3 = NULL;
+		}
+	}
 }
 
 
 void run_thread_manette(void){
-
-//    set_body_led(2);
-	chThdCreateStatic(thd_m3_capteur_distance_wa, sizeof(thd_m3_capteur_distance_wa), NORMALPRIO, thd_m3_capteur_distance, NULL);
+	thd_mode_3 = chThdCreateStatic(thd_m3_capteur_distance_wa, sizeof(thd_m3_capteur_distance_wa), NORMALPRIO, thd_m3_capteur_distance, NULL);
 }
