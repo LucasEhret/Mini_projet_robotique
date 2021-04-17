@@ -17,6 +17,11 @@
 #include <leds.h>
 #include <selector.h>
 #include <controle_thread.h>
+#include <sensors/proximity.h>
+
+messagebus_t bus;
+MUTEX_DECL(bus_lock);
+CONDVAR_DECL(bus_condvar);
 
 //static BSEMAPHORE_DECL(sendToComputer_sem, TRUE);
 
@@ -38,27 +43,30 @@ static THD_FUNCTION(selector_thd, arg)
 			switch(position_select) {
 						case 0: //mode attente
 							clear_leds();
-							set_led(LED1, 1);
+//							set_led(LED1, 1);
+							run_thread_mode_0();
 							break;
-						case 2: //mode 1 : conduite respectueuse
+						case 1: //mode 1 : conduite respectueuse
 							clear_leds();
 							set_led(LED3, 1);
+							run_thread_mode_1();
 							break;
-						case 4: //mode 2 : mode Tom Cruise
+						case 2: //mode 2 : mode Tom Cruise
 							clear_leds();
 							set_led(LED5, 1);
-							stop_thread(3);
+							stop_thread(MODE3);
 							break;
-						case 6: //mode 3 : mode manette
+						case 3: //mode 3 : mode manette
 							clear_leds();
 							set_led(LED7, 1);
-							run_thread_manette();
+							run_thread_mode_3();
 							break;
 						default :
 							clear_leds();
 							break;
 			}
         }
+    	chThdSleepMilliseconds(130);
     }
 }
 
@@ -95,12 +103,16 @@ int main(void)
 	clear_leds();
 	set_body_led(0);
 	set_front_led(0);
+	proximity_start();
+    /** Inits the Inter Process Communication bus. */
+    messagebus_init(&bus, &bus_lock, &bus_condvar);
+
 
 	//stars the threads for the pi regulator and the processing of the image
 //	pi_regulator_start();
 //	process_image_start();
 
-	chThdCreateStatic(selector_thd_wa, sizeof(selector_thd_wa), NORMALPRIO, selector_thd, NULL);
+	chThdCreateStatic(selector_thd_wa, sizeof(selector_thd_wa), NORMALPRIO + 1, selector_thd, NULL);
 
     /* Infinite loop. */
     while (1) {

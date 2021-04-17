@@ -6,13 +6,15 @@
 
 //Modes disponibles
 typedef enum {
-	Mode0 =0,
-	Mode1,
-	Mode2,
-	Mode3,
-};
+	MODE0 = 0,
+	MODE1,
+	MODE2,
+	MODE3,
+} mode_robot;
 
-void stop_thread(int mode_to_stop);
-void run_thread_manette(void);
+void stop_thread(mode_robot mode_to_stop);
+void run_thread_mode_3(void);
+void run_thread_mode_1(void);
+void run_thread_mode_0(void);
 
 #endif

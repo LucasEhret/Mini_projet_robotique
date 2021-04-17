@@ -8,13 +8,29 @@
 #include <leds.h>
 #include <motors.h>
 #include <communications.h>
+#include <sensors/proximity.h>
 
 #define NB_ELEMENTS_CONTROLLER 4
+#define DIST_THRESHOLD 15
+#define DIST_THRESHOLD_JEU 6
 
+//threads du mode 0 :
 static thread_t* thd_mode_0 = NULL;
+static thread_t* thd_mode_0_IR = NULL;
+
+//threads du mode 1 :
 static thread_t* thd_mode_1 = NULL;
+static thread_t* thd_mode_1_IR = NULL;
+
+//threads du mode 2 :
 static thread_t* thd_mode_2 = NULL;
-static thread_t* thd_mode_3 = NULL;
+
+//threads du mode 3 :
+static thread_t* thd_mode_3_manette = NULL;
+static thread_t* thd_mode_3_IR = NULL;
+static thread_t* thd_mode_3_musique = NULL;
+
+
 
 
 //-------------------------------MODE 0-----------------------------------------------------------
@@ -30,11 +46,28 @@ static THD_FUNCTION(thd_m0_capteur_distance, arg)
     (void) arg;
     chRegSetThreadName(__FUNCTION__);
 
+    calibrate_ir();
+
     //boucle infinie du thread
     while(chThdShouldTerminateX() == false){
-    	/*
-    	 * fonction a remplir
-    	 */
+        //Détection obstacles frontaux
+    	uint8_t indice_capteur = 10;
+    	uint8_t temp_val_max = 0;
+    	for (uint8_t i = 0; i < 8; i += 2){
+    		if (get_prox(i) > temp_val_max && get_prox(i) > DIST_THRESHOLD_JEU){
+    			temp_val_max = get_prox(i);
+    			indice_capteur = i;
+    		}
+    	}
+    	if(indice_capteur < 7){
+    		set_led(indice_capteur, 1);
+    	}
+      	for (uint8_t j = 0; j < 4; j++){
+      		if (j*2 != indice_capteur){
+      			set_led(j, 0);
+      		}
+      	}
+      	chThdSleepMilliseconds(100);
     }
 }
 
@@ -72,13 +105,22 @@ static THD_FUNCTION(thd_m1_capteur_distance, arg)
     (void) arg;
     chRegSetThreadName(__FUNCTION__);
 
+    calibrate_ir();
     //boucle infinie du thread
     while(chThdShouldTerminateX() == false){
-    	/*
-    	 * CONSTRUCTION EN COUR
-    	 */
+        //Détection obstacles frontaux
+      	if((get_prox(0) > DIST_THRESHOLD) || (get_prox(7) > DIST_THRESHOLD)) {
+      		//Arret
+      		left_motor_set_speed(0);
+      		right_motor_set_speed(0);
+      		set_front_led(1);
+      	}
+      	else{
+          	set_front_led(0);
+      	}
 
 
+      	chThdSleepMilliseconds(100);
     }
 }
 
@@ -132,12 +174,20 @@ static THD_FUNCTION(thd_m3_capteur_distance, arg)
     	uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, data_from_computer, NB_ELEMENTS_CONTROLLER);
     	if(size == NB_ELEMENTS_CONTROLLER){
     		data_from_computer[1] -= 180;
-    		int right_speed = (90-data_from_computer[1]) / 90 * 330 * data_from_computer[0] / 100;
-    		int left_speed = (-90-data_from_computer[1]) / (-90) * 330 * data_from_computer[0] / 100;
-    		right_motor_set_speed(right_speed);
-    		left_motor_set_speed(left_speed);
+    		if (data_from_computer[1] > -90 && data_from_computer[1] < 90){
+    			int right_speed = (90-data_from_computer[1]) / 90 * 330 * data_from_computer[0] / 100;
+    			int left_speed = (-90-data_from_computer[1]) / (-90) * 330 * data_from_computer[0] / 100;
+    			right_motor_set_speed(right_speed);
+    			left_motor_set_speed(left_speed);
+    		}
+    		if (data_from_computer[1] < -90 || data_from_computer[1] > 90){
+    			int left_speed = -330 * data_from_computer[0] / 100;
+    			int right_speed = left_speed;
+    			right_motor_set_speed(right_speed);
+    			left_motor_set_speed(left_speed);
+    		}
     	}
-//    	chThdSleepMilliseconds(40);
+    	chThdSleepMilliseconds(60);
     }
 }
 
@@ -162,38 +212,53 @@ static THD_FUNCTION(thd_m3_recep_manette, arg)
 
 //-----------------------------GESTION THREADS----------------------------------------
 
-void stop_thread(int mode_to_stop){
-	if (mode_to_stop == 0){
-		if (thd_mode_0 != NULL){
-			chThdTerminate(thd_mode_0);
-			chThdWait(thd_mode_0);
-			thd_mode_0 = NULL;
-		}
-	}
-	else if (mode_to_stop == 1){
-		if (thd_mode_1 != NULL){
-			chThdTerminate(thd_mode_1);
-			chThdWait(thd_mode_1);
-			thd_mode_1 = NULL;
-		}
-	}
-	else if (mode_to_stop == 2){
-		if (thd_mode_2 != NULL){
-			chThdTerminate(thd_mode_2);
-			chThdWait(thd_mode_2);
-			thd_mode_2 = NULL;
-		}
-	}
-	else if (mode_to_stop == 3){
-		if (thd_mode_3 != NULL){
-			chThdTerminate(thd_mode_3);
-			chThdWait(thd_mode_3);
-			thd_mode_3 = NULL;
-		}
+void stop_thread(mode_robot mode_to_stop){
+	switch(mode_to_stop) {
+		case 0:
+			if (thd_mode_0 != NULL){
+				chThdTerminate(thd_mode_0);
+				chThdWait(thd_mode_0);
+				thd_mode_0 = NULL;
+			}
+			break;
+		case 1:
+			if (thd_mode_1 != NULL){
+				chThdTerminate(thd_mode_1);
+				chThdWait(thd_mode_1);
+				thd_mode_1 = NULL;
+			}
+			break;
+		case 2:
+			if (thd_mode_2 != NULL){
+				chThdTerminate(thd_mode_2);
+				chThdWait(thd_mode_2);
+				thd_mode_2 = NULL;
+			}
+			break;
+		case 3:
+			if (thd_mode_3_manette != NULL){
+				chThdTerminate(thd_mode_3_manette);
+//				chThdWait(thd_mode_3_manette);
+				thd_mode_3_manette = NULL;
+			}
+			if (thd_mode_3_IR != NULL){
+				chThdTerminate(thd_mode_3_IR);
+				chThdWait(thd_mode_3_IR);
+				thd_mode_3_IR = NULL;
+			}
+			break;
 	}
 }
 
+void run_thread_mode_0(void){
+	thd_mode_0_IR = chThdCreateStatic(thd_m0_capteur_distance_wa, sizeof(thd_m0_capteur_distance_wa), NORMALPRIO + 1, thd_m0_capteur_distance, NULL);
+}
 
-void run_thread_manette(void){
-	thd_mode_3 = chThdCreateStatic(thd_m3_capteur_distance_wa, sizeof(thd_m3_capteur_distance_wa), NORMALPRIO, thd_m3_capteur_distance, NULL);
+
+void run_thread_mode_1(void){
+	thd_mode_1_IR = chThdCreateStatic(thd_m1_capteur_distance_wa, sizeof(thd_m1_capteur_distance_wa), NORMALPRIO + 1, thd_m1_capteur_distance, NULL);
+}
+
+void run_thread_mode_3(void){
+	thd_mode_3_manette = chThdCreateStatic(thd_m3_capteur_distance_wa, sizeof(thd_m3_capteur_distance_wa), NORMALPRIO, thd_m3_capteur_distance, NULL);
 }
