@@ -9,6 +9,8 @@
 #include <motors.h>
 #include <communications.h>
 #include <sensors/proximity.h>
+#include <audio/play_melody.h>
+#include <process_image.h>
 
 #define NB_ELEMENTS_CONTROLLER 4
 #define DIST_THRESHOLD 15
@@ -21,6 +23,8 @@ static thread_t* thd_mode_0_IR = NULL;
 //threads du mode 1 :
 static thread_t* thd_mode_1 = NULL;
 static thread_t* thd_mode_1_IR = NULL;
+static thread_t* thd_mode_1_ProcessImage = NULL;
+static thread_t* thd_mode_1_CaptureImage = NULL;
 
 //threads du mode 2 :
 static thread_t* thd_mode_2 = NULL;
@@ -51,20 +55,30 @@ static THD_FUNCTION(thd_m0_capteur_distance, arg)
     //boucle infinie du thread
     while(chThdShouldTerminateX() == false){
         //Détection obstacles frontaux
-    	uint8_t indice_capteur = 10;
+    	volatile uint8_t indice_capteur = 10;
     	uint8_t temp_val_max = 0;
-    	for (uint8_t i = 0; i < 8; i += 2){
+    	for (uint8_t i = 0; i < 8; i++){
     		if (get_prox(i) > temp_val_max && get_prox(i) > DIST_THRESHOLD_JEU){
     			temp_val_max = get_prox(i);
     			indice_capteur = i;
     		}
     	}
     	if(indice_capteur < 7){
-    		set_led(indice_capteur, 1);
+    		if(indice_capteur == 0 || indice_capteur == 2 || indice_capteur == 4 || indice_capteur == 6){
+    			set_led(indice_capteur / 2, 1);
+    		}
+    		else {
+    			set_rgb_led((int)(indice_capteur / 2), 100, 0, 0);
+    		}
     	}
-      	for (uint8_t j = 0; j < 4; j++){
-      		if (j*2 != indice_capteur){
-      			set_led(j, 0);
+      	for (volatile uint8_t j = 0; j < 8; j++){
+      		if (j != indice_capteur){
+      			if(j == 0 || j == 2 || j == 4 || j == 6){
+      				set_led(j / 2, 0);
+      			}
+      			else {
+      				set_rgb_led((int)(j / 2), 0, 0, 0);
+      			}
       		}
       	}
       	chThdSleepMilliseconds(100);
@@ -252,11 +266,13 @@ void stop_thread(mode_robot mode_to_stop){
 
 void run_thread_mode_0(void){
 	thd_mode_0_IR = chThdCreateStatic(thd_m0_capteur_distance_wa, sizeof(thd_m0_capteur_distance_wa), NORMALPRIO + 1, thd_m0_capteur_distance, NULL);
+//	playMelody(MARIO, ML_SIMPLE_PLAY, NULL);
 }
 
 
 void run_thread_mode_1(void){
 	thd_mode_1_IR = chThdCreateStatic(thd_m1_capteur_distance_wa, sizeof(thd_m1_capteur_distance_wa), NORMALPRIO + 1, thd_m1_capteur_distance, NULL);
+	process_image_start(thd_mode_1_ProcessImage, thd_mode_1_CaptureImage);
 }
 
 void run_thread_mode_3(void){

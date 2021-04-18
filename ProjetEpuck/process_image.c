@@ -151,16 +151,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 		lineWidth = extract_line_width(image);
 
 		//converts the width into a distance between the robot and the camera
-		if(lineWidth){
-			distance_cm = PXTOCM/lineWidth;
-		}
-
-		if(send_to_computer){
-			//sends to the computer the image
-			SendUint8ToComputer(image, IMAGE_BUFFER_SIZE);
-		}
-		//invert the bool
-		send_to_computer = !send_to_computer;
     }
 }
 
@@ -172,7 +162,7 @@ uint16_t get_line_position(void){
 	return line_position;
 }
 
-void process_image_start(void){
-	chThdCreateStatic(waProcessImage, sizeof(waProcessImage), NORMALPRIO, ProcessImage, NULL);
-	chThdCreateStatic(waCaptureImage, sizeof(waCaptureImage), NORMALPRIO, CaptureImage, NULL);
+void process_image_start(thread_t* thd_mode_1_ProcessImage, thread_t* thd_mode_1_CaptureImage){
+	thd_mode_1_ProcessImage = chThdCreateStatic(waProcessImage, sizeof(waProcessImage), NORMALPRIO, ProcessImage, NULL);
+	thd_mode_1_CaptureImage = chThdCreateStatic(waCaptureImage, sizeof(waCaptureImage), NORMALPRIO, CaptureImage, NULL);
 }

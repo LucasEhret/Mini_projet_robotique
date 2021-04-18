@@ -18,6 +18,7 @@
 #include <selector.h>
 #include <controle_thread.h>
 #include <sensors/proximity.h>
+#include <audio/play_melody.h>
 
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
@@ -41,22 +42,26 @@ static THD_FUNCTION(selector_thd, arg)
     	if (position_select != new_position_select){
     		position_select = new_position_select;
 			switch(position_select) {
-						case 0: //mode attente
-							clear_leds();
-//							set_led(LED1, 1);
+						case MODE0: //mode attente
+//							clear_leds();
+							set_led(1, 1);
+//							set_rgb_led(0, 10, 0, 0);
+//							set_rgb_led(1, 10, 0, 0);
+//							set_rgb_led(2, 10, 0, 0);
+//							set_rgb_led(3, 10, 0, 0);
 							run_thread_mode_0();
 							break;
-						case 1: //mode 1 : conduite respectueuse
+						case MODE1: //mode 1 : conduite respectueuse
 							clear_leds();
 							set_led(LED3, 1);
 							run_thread_mode_1();
 							break;
-						case 2: //mode 2 : mode Tom Cruise
+						case MODE2: //mode 2 : mode Tom Cruise
 							clear_leds();
 							set_led(LED5, 1);
 							stop_thread(MODE3);
 							break;
-						case 3: //mode 3 : mode manette
+						case MODE3: //mode 3 : mode manette
 							clear_leds();
 							set_led(LED7, 1);
 							run_thread_mode_3();
@@ -104,6 +109,7 @@ int main(void)
 	set_body_led(0);
 	set_front_led(0);
 	proximity_start();
+//	playMelodyStart();
     /** Inits the Inter Process Communication bus. */
     messagebus_init(&bus, &bus_lock, &bus_condvar);
 
