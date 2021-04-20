@@ -19,6 +19,8 @@
 #include <controle_thread.h>
 #include <sensors/proximity.h>
 #include <audio/play_melody.h>
+#include "spi_comm.h"
+#include "audio/play_sound_file.h"
 
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
@@ -41,20 +43,23 @@ static THD_FUNCTION(selector_thd, arg)
     	new_position_select = get_selector();
     	if (position_select != new_position_select){
     		position_select = new_position_select;
+    		//arret des differents threads
+			stop_thread(MODE0);
+			stop_thread(MODE1);
+			stop_thread(MODE2);
+			stop_thread(MODE3);
 			switch(position_select) {
 						case MODE0: //mode attente
-//							clear_leds();
+							clear_leds();
 							set_led(1, 1);
-//							set_rgb_led(0, 10, 0, 0);
-//							set_rgb_led(1, 10, 0, 0);
-//							set_rgb_led(2, 10, 0, 0);
-//							set_rgb_led(3, 10, 0, 0);
 							run_thread_mode_0();
 							break;
 						case MODE1: //mode 1 : conduite respectueuse
+
 							clear_leds();
 							set_led(LED3, 1);
 							run_thread_mode_1();
+							stopCurrentMelody();
 							break;
 						case MODE2: //mode 2 : mode Tom Cruise
 							clear_leds();
@@ -108,16 +113,17 @@ int main(void)
 	clear_leds();
 	set_body_led(0);
 	set_front_led(0);
+	spi_comm_start();
+	//init capteurs
 	proximity_start();
+	//init melody
 //	playMelodyStart();
+	dac_start();
+
     /** Inits the Inter Process Communication bus. */
     messagebus_init(&bus, &bus_lock, &bus_condvar);
 
-
-	//stars the threads for the pi regulator and the processing of the image
-//	pi_regulator_start();
-//	process_image_start();
-
+    //lancement du selecteur
 	chThdCreateStatic(selector_thd_wa, sizeof(selector_thd_wa), NORMALPRIO + 1, selector_thd, NULL);
 
     /* Infinite loop. */
