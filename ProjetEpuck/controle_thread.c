@@ -226,10 +226,10 @@ static THD_FUNCTION(thd_m3, arg)
         	if(size == NB_ELEMENTS_CONTROLLER){
         		data_from_computer[1] -= 180;
         		if (data_from_computer[1] > -90 && data_from_computer[1] < 90){
-        			int right_speed = (90-data_from_computer[1]) / 90 * 330 * data_from_computer[0] / 100;
-        			int left_speed = (-90-data_from_computer[1]) / (-90) * 330 * data_from_computer[0] / 100;
-        			right_motor_set_speed(3*right_speed);
-        			left_motor_set_speed(3*left_speed);
+        			int right_speed = (90-data_from_computer[1]) / 90 * 1000 * data_from_computer[0] / 100;
+        			int left_speed = (-90-data_from_computer[1]) / (-90) * 1000 * data_from_computer[0] / 100;
+        			right_motor_set_speed(right_speed);
+        			left_motor_set_speed(left_speed);
         		}
         		if (data_from_computer[1] < -90 || data_from_computer[1] > 90){
         			int left_speed = -330 * data_from_computer[0] / 100;
@@ -240,7 +240,7 @@ static THD_FUNCTION(thd_m3, arg)
         	}
     	}
     	else {
-    		if(compteur < 75){
+    		if(compteur < 45){
     			compteur++;
     		}
     		else {
