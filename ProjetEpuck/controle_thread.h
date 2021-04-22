@@ -12,7 +12,8 @@ typedef enum {
 	MODE3,
 } mode_robot;
 
-void stop_thread(mode_robot mode_to_stop);
+
+void stop_thread_camera(void);
 void run_thread_mode_3(void);
 void run_thread_mode_1(void);
 void run_thread_mode_0(void);

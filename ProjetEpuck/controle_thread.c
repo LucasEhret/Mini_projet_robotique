@@ -23,8 +23,6 @@
 static thread_t* thd_mode_0_IR = NULL;
 
 //threads du mode 1 :
-static thread_t* thd_mode_1_ProcessImage = NULL;
-static thread_t* thd_mode_1_CaptureImage = NULL;
 static thread_t* thd_m1_position = NULL;
 
 //threads du mode 2 :
@@ -32,8 +30,6 @@ static thread_t* thd_mode_2 = NULL;
 
 //threads du mode 3 :
 static thread_t* thd_mode_3_manette = NULL;
-static thread_t* thd_mode_3_IR = NULL;
-static thread_t* thd_mode_3_musique = NULL;
 
 //msg_t *buf;
 //static MAILBOX_DECL(collision, buf, 1);
@@ -199,51 +195,72 @@ static THD_FUNCTION(thd_m2_camera, arg)
 
 
 //thread qui utilise les capteurs de distance pour faire un tour sur lui meme quand il rencontre un obstacle en mode manette
-static THD_WORKING_AREA(thd_m3_capteur_distance_wa, 1024);
-static THD_FUNCTION(thd_m3_capteur_distance, arg)
+static THD_WORKING_AREA(thd_m3_wa, 2048);
+static THD_FUNCTION(thd_m3, arg)
 {
     (void) arg;
     chRegSetThreadName(__FUNCTION__);
 
-
+    bool collision = false;
+    bool capteur_distance_actif = true;
+    uint16_t compteur_capteur = 0;
+    uint16_t compteur = 0;
     //boucle infinie du thread
     while(chThdShouldTerminateX() == false){
-//    	set_led(LED3, 1);
-    	float data_from_computer[4] = {0, 0, 0, 0};
-    	uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, data_from_computer, NB_ELEMENTS_CONTROLLER);
-    	if(size == NB_ELEMENTS_CONTROLLER){
-    		data_from_computer[1] -= 180;
-    		if (data_from_computer[1] > -90 && data_from_computer[1] < 90){
-    			int right_speed = (90-data_from_computer[1]) / 90 * 330 * data_from_computer[0] / 100;
-    			int left_speed = (-90-data_from_computer[1]) / (-90) * 330 * data_from_computer[0] / 100;
-    			right_motor_set_speed(right_speed);
-    			left_motor_set_speed(left_speed);
+    	//detection collision
+    	if((get_prox(7) > DIST_THRESHOLD) && !collision && capteur_distance_actif) {
+    		collision = true;
+    		capteur_distance_actif = false;
+    		//Instruction en cas de collision
+    		set_body_led(1);
+    		playMelody(MARIO_DEATH, ML_FORCE_CHANGE, NULL);
+    		left_motor_set_speed(500);
+    		right_motor_set_speed(-500);
+    		compteur_capteur = 0;
+    		compteur = 0;
+    	}
+    	if(!collision) {
+    		set_body_led(0);
+        	float data_from_computer[4] = {0, 0, 0, 0};
+        	uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, data_from_computer, NB_ELEMENTS_CONTROLLER);
+        	if(size == NB_ELEMENTS_CONTROLLER){
+        		data_from_computer[1] -= 180;
+        		if (data_from_computer[1] > -90 && data_from_computer[1] < 90){
+        			int right_speed = (90-data_from_computer[1]) / 90 * 330 * data_from_computer[0] / 100;
+        			int left_speed = (-90-data_from_computer[1]) / (-90) * 330 * data_from_computer[0] / 100;
+        			right_motor_set_speed(right_speed);
+        			left_motor_set_speed(left_speed);
+        		}
+        		if (data_from_computer[1] < -90 || data_from_computer[1] > 90){
+        			int left_speed = -330 * data_from_computer[0] / 100;
+        			int right_speed = left_speed;
+        			right_motor_set_speed(right_speed);
+        			left_motor_set_speed(left_speed);
+        		}
+        	}
+    	}
+    	else {
+    		if(compteur < 160){
+    			compteur++;
     		}
-    		if (data_from_computer[1] < -90 || data_from_computer[1] > 90){
-    			int left_speed = -330 * data_from_computer[0] / 100;
-    			int right_speed = left_speed;
-    			right_motor_set_speed(right_speed);
-    			left_motor_set_speed(left_speed);
+    		else {
+    			collision = false;
+    			left_motor_set_speed(0);
+    			right_motor_set_speed(0);
+    			stopCurrentMelody();
     		}
     	}
+    	if(compteur_capteur < 640 && !capteur_distance_actif) {
+    		compteur_capteur++;
+    	}
+    	else {
+    		capteur_distance_actif = true;
+    	}
+
     	chThdSleepMilliseconds(60);
     }
 }
 
-
-static THD_WORKING_AREA(thd_m3_recep_manette__wa, 1024);
-static THD_FUNCTION(thd_m3_recep_manette, arg)
-{
-    (void) arg;
-    chRegSetThreadName(__FUNCTION__);
-
-    //boucle infinie du thread
-    while(chThdShouldTerminateX() == false){
-    	/*
-    	 * fonction a remplir
-    	 */
-    }
-}
 
 
 
@@ -263,20 +280,13 @@ void stop_thread(mode_robot mode_to_stop){
 
 			break;
 		case MODE1:
-			if (thd_mode_1_ProcessImage != NULL){
-				chThdTerminate(thd_mode_1_ProcessImage);
-				chThdWait(thd_mode_1_ProcessImage);
-				thd_mode_1_ProcessImage = NULL;
-			}
-			if (thd_mode_1_CaptureImage != NULL){
-				chThdTerminate(thd_mode_1_CaptureImage);
-				chThdWait(thd_mode_1_CaptureImage);
-				thd_mode_1_CaptureImage = NULL;
-			}
+			stop_thread_camera();
 			if (thd_m1_position != NULL){
 				chThdTerminate(thd_m1_position);
 				chThdWait(thd_m1_position);
 				thd_m1_position = NULL;
+				right_motor_set_speed(0);
+				left_motor_set_speed(0);
 				stopCurrentMelody();
 			}
 
@@ -303,13 +313,12 @@ void run_thread_mode_0(void){
 
 
 void run_thread_mode_1(void){
-	process_image_start(thd_mode_1_ProcessImage); // visiblement pointeur pas bon
-	capture_image_start(thd_mode_1_CaptureImage);
+	process_image_start();
 	thd_m1_position = chThdCreateStatic(thd_m1_camera_wa, sizeof(thd_m1_camera_wa), NORMALPRIO, thd_m1_camera, NULL);
 //	playMelody(PIRATES_OF_THE_CARIBBEAN, 0, NULL);
 
 }
 
 void run_thread_mode_3(void){
-	thd_mode_3_manette = chThdCreateStatic(thd_m3_capteur_distance_wa, sizeof(thd_m3_capteur_distance_wa), NORMALPRIO, thd_m3_capteur_distance, NULL);
+	thd_mode_3_manette = chThdCreateStatic(thd_m3_wa, sizeof(thd_m3_wa), NORMALPRIO, thd_m3, NULL);
 }

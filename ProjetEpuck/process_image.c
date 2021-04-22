@@ -10,6 +10,8 @@
 #include <process_image.h>
 
 
+static thread_t* thd_mode_1_ProcessImage = NULL;
+static thread_t* thd_mode_1_CaptureImage = NULL;
 static float distance_cm = 0;
 static uint16_t line_position = IMAGE_BUFFER_SIZE/2;	//middle
 static uint16_t width = 0;
@@ -17,6 +19,20 @@ static bool send_to_computer = true;
 
 //semaphore
 static BSEMAPHORE_DECL(image_ready_sem, TRUE);
+
+
+void stop_thread_camera(void) {
+	if (thd_mode_1_ProcessImage != NULL){
+		chThdTerminate(thd_mode_1_ProcessImage);
+		chThdWait(thd_mode_1_ProcessImage);
+		thd_mode_1_ProcessImage = NULL;
+	}
+	if (thd_mode_1_CaptureImage != NULL){
+		chThdTerminate(thd_mode_1_CaptureImage);
+		chThdWait(thd_mode_1_CaptureImage);
+		thd_mode_1_CaptureImage = NULL;
+	}
+}
 
 /*
  *  Returns the line's width extracted from the image buffer given
@@ -115,7 +131,7 @@ static THD_FUNCTION(CaptureImage, arg) {
 	dcmi_set_capture_mode(CAPTURE_ONE_SHOT);
 	dcmi_prepare();
 
-    while(1){
+    while(chThdShouldTerminateX() == false){
         //starts a capture
 		dcmi_capture_start();
 		//waits for the capture to be done
@@ -135,9 +151,11 @@ static THD_FUNCTION(ProcessImage, arg) {
 	uint8_t *img_buff_ptr;
 	uint8_t image[IMAGE_BUFFER_SIZE] = {0};
 	uint16_t lineWidth = 0;
+	uint8_t red_value = 0;
+	uint8_t blue_value = 0;
 
 
-    while(1){
+    while(chThdShouldTerminateX() == false){
     	//waits until an image has been captured
         chBSemWait(&image_ready_sem);
 		//gets the pointer to the array filled with the last image in RGB565    
@@ -147,14 +165,19 @@ static THD_FUNCTION(ProcessImage, arg) {
 		for(uint16_t i = 0 ; i < (2 * IMAGE_BUFFER_SIZE) ; i+=2){
 			//extracts first 5bits of the first byte
 			//takes nothing from the second byte
-			image[i/2] = (uint8_t)img_buff_ptr[i]&0xF8;
+			red_value = (uint8_t)img_buff_ptr[i]&0xF8;
+			blue_value = ((uint8_t)img_buff_ptr[i+1]&0x1F) << 3;
+			//Prend la valeur mmin
+			if(red_value < blue_value){
+				image[i/2] = red_value;
+			}
+			else {
+				image[i/2] = blue_value;
+		    }
 		}
 
 		//search for a line in the image and gets its width in pixels
 		lineWidth = extract_line_width(image);
-
-		toggle_rgb_led(LED2, BLUE_LED, 100);  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 
 		if(send_to_computer){
 			//sends to the computer the image
@@ -182,10 +205,9 @@ uint16_t get_line_width(void){
 	return width;
 }
 
-void process_image_start(thread_t* thd_pt){
-	thd_pt = chThdCreateStatic(waProcessImage, sizeof(waProcessImage), NORMALPRIO, ProcessImage, NULL);
+void process_image_start(void){
+	thd_mode_1_ProcessImage = chThdCreateStatic(waProcessImage, sizeof(waProcessImage), NORMALPRIO, ProcessImage, NULL);
+	thd_mode_1_CaptureImage = chThdCreateStatic(waCaptureImage, sizeof(waCaptureImage), NORMALPRIO, CaptureImage, NULL);
 }
 
-void capture_image_start(thread_t* thd_pt){
-	thd_pt = chThdCreateStatic(waCaptureImage, sizeof(waCaptureImage), NORMALPRIO, CaptureImage, NULL);
-}
+
