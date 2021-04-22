@@ -13,18 +13,16 @@
 #include <process_image.h>
 
 #define NB_ELEMENTS_CONTROLLER 4
-#define DIST_THRESHOLD 23
-#define DIST_THRESHOLD_JEU 6
+#define DIST_THRESHOLD 150
+#define DIST_THRESHOLD_JEU 100
 #define SPEED_M1 600
-#define ROTATION_COEFF 2
-#define WIDTH_THRESHOLD 10
+#define ROTATION_COEFF 4
+#define WIDTH_THRESHOLD 100
 
 //threads du mode 0 :
-static thread_t* thd_mode_0 = NULL;
 static thread_t* thd_mode_0_IR = NULL;
 
 //threads du mode 1 :
-static thread_t* thd_mode_1_IR = NULL;
 static thread_t* thd_mode_1_ProcessImage = NULL;
 static thread_t* thd_mode_1_CaptureImage = NULL;
 static thread_t* thd_m1_position = NULL;
@@ -39,7 +37,6 @@ static thread_t* thd_mode_3_musique = NULL;
 
 //msg_t *buf;
 //static MAILBOX_DECL(collision, buf, 1);
-static tmp_collision = 0;
 
 //-------------------------------MODE 0-----------------------------------------------------------
 /*Thread propre au mode 0 : attente
@@ -69,8 +66,9 @@ static THD_FUNCTION(thd_m0_capteur_distance, arg)
     	}
 		switch(indice_capteur){
 			case 0 :
-				clear_leds();
-				set_led(LED1, 1);
+				//bloqué par le miroir
+//				clear_leds();
+//				set_led(LED1, 1);
 				break;
 			case 1 :
 				clear_leds();
@@ -122,17 +120,27 @@ static THD_FUNCTION(thd_m0_capteur_distance, arg)
 
 
 //thread qui récupère les images de la caméra
-static THD_WORKING_AREA(thd_m1_camera_wa, 1024);
+static THD_WORKING_AREA(thd_m1_camera_wa, 2048);
 static THD_FUNCTION(thd_m1_camera, arg)
 {
     (void) arg;
     chRegSetThreadName(__FUNCTION__);
 
     int16_t speed_correction = 0;
-
+    volatile int valeur_capteur = 0;
     //boucle infinie du thread
+//    set_body_led(1);
     while(chThdShouldTerminateX() == false){
-    	if(!tmp_collision){
+    	valeur_capteur = get_prox(7);
+//      	if(get_prox(7) > DIST_THRESHOLD) {
+//        if((get_prox(0) > DIST_THRESHOLD) || (get_prox(7) > DIST_THRESHOLD)) {
+        if((get_prox(7) > DIST_THRESHOLD)) {
+      		//Arret
+      		left_motor_set_speed(0);
+      		right_motor_set_speed(0);
+      		set_body_led(1);
+      	}
+      	else{
             //computes a correction factor to let the robot rotate to be in front of the line
             speed_correction = (get_line_position() - (IMAGE_BUFFER_SIZE/2));
 
@@ -140,6 +148,7 @@ static THD_FUNCTION(thd_m1_camera, arg)
             if(abs(speed_correction) < ROTATION_THRESHOLD){
             	speed_correction = 0;
             }
+            volatile tmp = get_line_width();
             if(get_line_width() > WIDTH_THRESHOLD){
                 //applies the speed from the PI regulator and the correction for the rotation
         		right_motor_set_speed(SPEED_M1 - ROTATION_COEFF * speed_correction);
@@ -149,38 +158,8 @@ static THD_FUNCTION(thd_m1_camera, arg)
           		left_motor_set_speed(0);
           		right_motor_set_speed(0);
             }
-    	}
-
+      	}
 		chThdSleepMilliseconds(50);
-    }
-}
-
-
-//thread qui utilise les capteurs de distance pour eviter les obstacles sur le parcours
-static THD_WORKING_AREA(thd_m1_capteur_distance_wa, 1024);
-static THD_FUNCTION(thd_m1_capteur_distance, arg)
-{
-    (void) arg;
-    chRegSetThreadName(__FUNCTION__);
-
-    calibrate_ir();
-    //boucle infinie du thread
-    while(chThdShouldTerminateX() == false){
-        //Détection obstacles frontaux
-      	if(get_prox(7) > DIST_THRESHOLD) {
-//        if((get_prox(0) > DIST_THRESHOLD) || (get_prox(7) > DIST_THRESHOLD)) {
-      		//Arret
-      		left_motor_set_speed(0);
-      		right_motor_set_speed(0);
-//      		set_front_led(1);
-      		set_body_led(1);
-      		tmp_collision = 1;
-      	}
-      	else{
-          	set_body_led(0);
-          	tmp_collision = 0;
-      	}
-      	chThdSleepMilliseconds(20);
     }
 }
 
@@ -279,15 +258,11 @@ void stop_thread(mode_robot mode_to_stop){
 				chThdTerminate(thd_mode_0_IR);
 				chThdWait(thd_mode_0_IR);
 				thd_mode_0_IR = NULL;
+				stopCurrentMelody();
 			}
-			stopCurrentMelody();
+
 			break;
 		case MODE1:
-			if (thd_mode_1_IR != NULL){
-				chThdTerminate(thd_mode_1_IR);
-				chThdWait(thd_mode_1_IR);
-				thd_mode_1_IR = NULL;
-			}
 			if (thd_mode_1_ProcessImage != NULL){
 				chThdTerminate(thd_mode_1_ProcessImage);
 				chThdWait(thd_mode_1_ProcessImage);
@@ -298,7 +273,13 @@ void stop_thread(mode_robot mode_to_stop){
 				chThdWait(thd_mode_1_CaptureImage);
 				thd_mode_1_CaptureImage = NULL;
 			}
-			stopCurrentMelody();
+			if (thd_m1_position != NULL){
+				chThdTerminate(thd_m1_position);
+				chThdWait(thd_m1_position);
+				thd_m1_position = NULL;
+				stopCurrentMelody();
+			}
+
 			break;
 		case MODE2:
 			break;
@@ -307,6 +288,7 @@ void stop_thread(mode_robot mode_to_stop){
 				chThdTerminate(thd_mode_3_manette);
 				chThdWait(thd_mode_3_manette);
 				thd_mode_3_manette = NULL;
+				stopCurrentMelody();
 			}
 			break;
 		default :
@@ -315,15 +297,17 @@ void stop_thread(mode_robot mode_to_stop){
 }
 
 void run_thread_mode_0(void){
-	thd_mode_0_IR = chThdCreateStatic(thd_m0_capteur_distance_wa, sizeof(thd_m0_capteur_distance_wa), NORMALPRIO + 1, thd_m0_capteur_distance, NULL);
-	playMelody(MARIO, ML_SIMPLE_PLAY, NULL);
+	thd_mode_0_IR = chThdCreateStatic(thd_m0_capteur_distance_wa, sizeof(thd_m0_capteur_distance_wa), NORMALPRIO, thd_m0_capteur_distance, NULL);
+//	playMelody(MARIO, ML_SIMPLE_PLAY, NULL);
 }
 
 
 void run_thread_mode_1(void){
-	thd_mode_1_IR = chThdCreateStatic(thd_m1_capteur_distance_wa, sizeof(thd_m1_capteur_distance_wa), NORMALPRIO + 1, thd_m1_capteur_distance, NULL);
-	process_image_start(thd_mode_1_ProcessImage, thd_mode_1_CaptureImage);
+	process_image_start(thd_mode_1_ProcessImage); // visiblement pointeur pas bon
+	capture_image_start(thd_mode_1_CaptureImage);
 	thd_m1_position = chThdCreateStatic(thd_m1_camera_wa, sizeof(thd_m1_camera_wa), NORMALPRIO, thd_m1_camera, NULL);
+//	playMelody(PIRATES_OF_THE_CARIBBEAN, 0, NULL);
+
 }
 
 void run_thread_mode_3(void){

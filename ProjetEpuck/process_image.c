@@ -5,6 +5,7 @@
 
 #include <main.h>
 #include <camera/po8030.h>
+#include <leds.h> //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #include <process_image.h>
 
@@ -12,6 +13,7 @@
 static float distance_cm = 0;
 static uint16_t line_position = IMAGE_BUFFER_SIZE/2;	//middle
 static uint16_t width = 0;
+static bool send_to_computer = true;
 
 //semaphore
 static BSEMAPHORE_DECL(image_ready_sem, TRUE);
@@ -134,7 +136,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 	uint8_t image[IMAGE_BUFFER_SIZE] = {0};
 	uint16_t lineWidth = 0;
 
-	bool send_to_computer = true;
 
     while(1){
     	//waits until an image has been captured
@@ -151,7 +152,22 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 		//search for a line in the image and gets its width in pixels
 		lineWidth = extract_line_width(image);
+
+		toggle_rgb_led(LED2, BLUE_LED, 100);  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+		if(send_to_computer){
+			//sends to the computer the image
+			SendUint8ToComputer(image, IMAGE_BUFFER_SIZE);
+		}
     }
+}
+
+void SendUint8ToComputer(uint8_t* data, uint16_t size)
+{
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&size, sizeof(uint16_t));
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
 }
 
 float get_distance_cm(void){
@@ -166,7 +182,10 @@ uint16_t get_line_width(void){
 	return width;
 }
 
-void process_image_start(thread_t* thd_mode_1_ProcessImage, thread_t* thd_mode_1_CaptureImage){
-	thd_mode_1_ProcessImage = chThdCreateStatic(waProcessImage, sizeof(waProcessImage), NORMALPRIO, ProcessImage, NULL);
-	thd_mode_1_CaptureImage = chThdCreateStatic(waCaptureImage, sizeof(waCaptureImage), NORMALPRIO, CaptureImage, NULL);
+void process_image_start(thread_t* thd_pt){
+	thd_pt = chThdCreateStatic(waProcessImage, sizeof(waProcessImage), NORMALPRIO, ProcessImage, NULL);
+}
+
+void capture_image_start(thread_t* thd_pt){
+	thd_pt = chThdCreateStatic(waCaptureImage, sizeof(waCaptureImage), NORMALPRIO, CaptureImage, NULL);
 }

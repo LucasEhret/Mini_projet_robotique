@@ -48,31 +48,23 @@ static THD_FUNCTION(selector_thd, arg)
 			stop_thread(MODE1);
 			stop_thread(MODE2);
 			stop_thread(MODE3);
+			clear_leds();
+			set_body_led(0);
+			set_front_led(0);
 			switch(position_select) {
 						case MODE0: //mode attente
-							clear_leds();
-							set_led(1, 1);
 							run_thread_mode_0();
 							break;
 						case MODE1: //mode 1 : conduite respectueuse
-
-							clear_leds();
-							set_led(LED3, 1);
 							run_thread_mode_1();
-							stopCurrentMelody();
 							break;
 						case MODE2: //mode 2 : mode Tom Cruise
-							clear_leds();
-							set_led(LED5, 1);
 							stop_thread(MODE3);
 							break;
 						case MODE3: //mode 3 : mode manette
-							clear_leds();
-							set_led(LED7, 1);
 							run_thread_mode_3();
 							break;
 						default :
-							clear_leds();
 							break;
 			}
         }
@@ -117,14 +109,14 @@ int main(void)
 	//init capteurs
 	proximity_start();
 	//init melody
-//	playMelodyStart();
+	playMelodyStart();
 	dac_start();
 
     /** Inits the Inter Process Communication bus. */
     messagebus_init(&bus, &bus_lock, &bus_condvar);
 
     //lancement du selecteur
-	chThdCreateStatic(selector_thd_wa, sizeof(selector_thd_wa), NORMALPRIO + 1, selector_thd, NULL);
+	chThdCreateStatic(selector_thd_wa, sizeof(selector_thd_wa), HIGHPRIO, selector_thd, NULL);
 
     /* Infinite loop. */
     while (1) {
