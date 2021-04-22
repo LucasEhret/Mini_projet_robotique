@@ -210,12 +210,12 @@ static THD_FUNCTION(thd_m3, arg)
     	//detection collision
     	if((get_prox(7) > DIST_THRESHOLD) && !collision && capteur_distance_actif) {
     		collision = true;
-    		capteur_distance_actif = false;
+//    		capteur_distance_actif = false;
     		//Instruction en cas de collision
     		set_body_led(1);
     		playMelody(MARIO_DEATH, ML_FORCE_CHANGE, NULL);
-    		left_motor_set_speed(500);
-    		right_motor_set_speed(-500);
+    		left_motor_set_speed(700);
+    		right_motor_set_speed(-700);
     		compteur_capteur = 0;
     		compteur = 0;
     	}
@@ -228,8 +228,8 @@ static THD_FUNCTION(thd_m3, arg)
         		if (data_from_computer[1] > -90 && data_from_computer[1] < 90){
         			int right_speed = (90-data_from_computer[1]) / 90 * 330 * data_from_computer[0] / 100;
         			int left_speed = (-90-data_from_computer[1]) / (-90) * 330 * data_from_computer[0] / 100;
-        			right_motor_set_speed(right_speed);
-        			left_motor_set_speed(left_speed);
+        			right_motor_set_speed(3*right_speed);
+        			left_motor_set_speed(3*left_speed);
         		}
         		if (data_from_computer[1] < -90 || data_from_computer[1] > 90){
         			int left_speed = -330 * data_from_computer[0] / 100;
@@ -240,7 +240,7 @@ static THD_FUNCTION(thd_m3, arg)
         	}
     	}
     	else {
-    		if(compteur < 160){
+    		if(compteur < 75){
     			compteur++;
     		}
     		else {
@@ -250,12 +250,12 @@ static THD_FUNCTION(thd_m3, arg)
     			stopCurrentMelody();
     		}
     	}
-    	if(compteur_capteur < 640 && !capteur_distance_actif) {
-    		compteur_capteur++;
-    	}
-    	else {
-    		capteur_distance_actif = true;
-    	}
+//    	if(compteur_capteur < 640 && !capteur_distance_actif) {
+//    		compteur_capteur++;
+//    	}
+//    	else {
+//    		capteur_distance_actif = true;
+//    	}
 
     	chThdSleepMilliseconds(60);
     }
