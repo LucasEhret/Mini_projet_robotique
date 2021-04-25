@@ -15,8 +15,8 @@
 #define NB_ELEMENTS_CONTROLLER 4
 #define DIST_THRESHOLD 150
 #define DIST_THRESHOLD_JEU 100
-#define SPEED_M1 600
-#define ROTATION_COEFF 4
+#define SPEED_M1 400
+#define ROTATION_COEFF 2
 #define WIDTH_THRESHOLD 100
 
 //threads du mode 0 :
