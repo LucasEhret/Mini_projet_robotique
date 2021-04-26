@@ -15,8 +15,10 @@
 #define NB_ELEMENTS_CONTROLLER 4
 #define DIST_THRESHOLD 150
 #define DIST_THRESHOLD_JEU 100
-#define SPEED_M1 600
-#define ROTATION_COEFF 3
+#define SPEED_M1 400
+#define SPEED_M2 600
+#define ROTATION_COEFF_M1 2
+#define ROTATION_COEFF_M2 2
 #define WIDTH_THRESHOLD 100
 #define SPEED_M3 1000
 
@@ -136,6 +138,7 @@ static THD_FUNCTION(thd_m1_camera, arg)
       		set_body_led(1);
       	}
       	else{
+      		set_body_led(0);
             //computes a correction factor to let the robot rotate to be in front of the line
             speed_correction = (get_line_position() - (IMAGE_BUFFER_SIZE/2));
 
@@ -146,8 +149,8 @@ static THD_FUNCTION(thd_m1_camera, arg)
             volatile tmp = get_line_width();
             if(get_line_width() > WIDTH_THRESHOLD){
                 //applies the speed from the PI regulator and the correction for the rotation
-        		right_motor_set_speed(SPEED_M1 - ROTATION_COEFF * speed_correction);
-        		left_motor_set_speed(SPEED_M1 + ROTATION_COEFF * speed_correction);
+        		right_motor_set_speed(SPEED_M1 - ROTATION_COEFF_M1 * speed_correction);
+        		left_motor_set_speed(SPEED_M1 + ROTATION_COEFF_M1 * speed_correction);
             }
             else{
           		left_motor_set_speed(0);
@@ -167,17 +170,41 @@ static THD_FUNCTION(thd_m1_camera, arg)
  */
 
 
-static THD_WORKING_AREA(thd_m2_camera__wa, 1024);
+static THD_WORKING_AREA(thd_m2_camera_wa, 1024);
 static THD_FUNCTION(thd_m2_camera, arg)
 {
     (void) arg;
     chRegSetThreadName(__FUNCTION__);
 
+    int16_t speed_correction = 0;
+
     //boucle infinie du thread
     while(chThdShouldTerminateX() == false){
-    	/*
-    	 * fonction a remplir
-    	 */
+    	uint16_t speed_right = SPEED_M2;
+    	uint16_t speed_left = SPEED_M2;
+        if(get_prox(7) > DIST_THRESHOLD / 3) {
+      		//Acceleration
+        	speed_left = 1000;
+        	speed_left = 1000;
+        	set_body_led(1);
+      	}
+        else{
+        	set_body_led(0);
+        }
+		//computes a correction factor to let the robot rotate to be in front of the line
+		speed_correction = (get_line_position() - (IMAGE_BUFFER_SIZE/2));
+
+		//if the line is nearly in front of the camera, don't rotate
+		if(abs(speed_correction) < ROTATION_THRESHOLD){
+			speed_correction = 0;
+		}
+		volatile tmp = get_line_width();
+		if(get_line_width() > WIDTH_THRESHOLD){
+			//applies the speed from the PI regulator and the correction for the rotation
+			right_motor_set_speed(speed_right - ROTATION_COEFF_M2 * speed_correction);
+			left_motor_set_speed(speed_left + ROTATION_COEFF_M2 * speed_correction);
+		}
+		chThdSleepMilliseconds(50);
     }
 }
 
@@ -275,42 +302,7 @@ static THD_FUNCTION(thd_m3, arg)
 
 //-----------------------------GESTION THREADS----------------------------------------
 
-void stop_thread(mode_robot mode_to_stop){
-//	switch(mode_to_stop) {
-//		case MODE0:
-//			if (thd_mode_0_IR != NULL){
-//				chThdTerminate(thd_mode_0_IR);
-//				chThdWait(thd_mode_0_IR);
-//				thd_mode_0_IR = NULL;
-//				stopCurrentMelody();
-//			}
-//
-//			break;
-//		case MODE1:
-//			stop_thread_camera();
-//			if (thd_m1_position != NULL){
-//				chThdTerminate(thd_m1_position);
-//				chThdWait(thd_m1_position);
-//				thd_m1_position = NULL;
-//				right_motor_set_speed(0);
-//				left_motor_set_speed(0);
-//				stopCurrentMelody();
-//			}
-//
-//			break;
-//		case MODE2:
-//			break;
-//		case MODE3:
-//			if (thd_mode_3_manette != NULL){
-//				chThdTerminate(thd_mode_3_manette);
-//				chThdWait(thd_mode_3_manette);
-//				thd_mode_3_manette = NULL;
-//				stopCurrentMelody();
-//			}
-//			break;
-//		default :
-//			break;
-//	}
+void stop_thread(void){
 
 	//arrete tous les threads actifs
 	stop_thread_camera();
@@ -324,6 +316,14 @@ void stop_thread(mode_robot mode_to_stop){
 		chThdTerminate(thd_m1_position);
 		chThdWait(thd_m1_position);
 		thd_m1_position = NULL;
+		right_motor_set_speed(0);
+		left_motor_set_speed(0);
+		stopCurrentMelody();
+	}
+	if (thd_mode_2 != NULL){
+		chThdTerminate(thd_mode_2);
+		chThdWait(thd_mode_2);
+		thd_mode_2 = NULL;
 		right_motor_set_speed(0);
 		left_motor_set_speed(0);
 		stopCurrentMelody();
@@ -348,6 +348,14 @@ void run_thread_mode_1(void){
 //	playMelody(PIRATES_OF_THE_CARIBBEAN, 0, NULL);
 
 }
+
+
+void run_thread_mode_2(void){
+	process_image_start();
+	thd_mode_2 = chThdCreateStatic(thd_m2_camera_wa, sizeof(thd_m2_camera_wa), NORMALPRIO, thd_m2_camera, NULL);
+	playMelody(IMPOSSIBLE_MISSION, ML_FORCE_CHANGE, NULL);
+}
+
 
 void run_thread_mode_3(void){
 	thd_mode_3_manette = chThdCreateStatic(thd_m3_wa, sizeof(thd_m3_wa), NORMALPRIO, thd_m3, NULL);

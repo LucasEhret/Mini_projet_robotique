@@ -44,10 +44,7 @@ static THD_FUNCTION(selector_thd, arg)
     	if (position_select != new_position_select){
     		position_select = new_position_select;
     		//arret des differents threads
-			stop_thread(MODE0);
-//			stop_thread(MODE1);
-//			stop_thread(MODE2);
-//			stop_thread(MODE3);
+			stop_thread();
 			clear_leds();
 			set_body_led(0);
 			set_front_led(0);
@@ -59,7 +56,7 @@ static THD_FUNCTION(selector_thd, arg)
 							run_thread_mode_1();
 							break;
 						case MODE2: //mode 2 : mode Tom Cruise
-							stop_thread(MODE3);
+							run_thread_mode_2();
 							break;
 						case MODE3: //mode 3 : mode manette
 							run_thread_mode_3();

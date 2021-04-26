@@ -13,7 +13,7 @@ typedef enum {
 } mode_robot;
 
 
-void stop_thread_camera(void);
+void stop_thread(void);
 void run_thread_mode_3(void);
 void run_thread_mode_1(void);
 void run_thread_mode_0(void);
