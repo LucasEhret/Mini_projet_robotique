@@ -45,9 +45,9 @@ static THD_FUNCTION(selector_thd, arg)
     		position_select = new_position_select;
     		//arret des differents threads
 			stop_thread(MODE0);
-			stop_thread(MODE1);
-			stop_thread(MODE2);
-			stop_thread(MODE3);
+//			stop_thread(MODE1);
+//			stop_thread(MODE2);
+//			stop_thread(MODE3);
 			clear_leds();
 			set_body_led(0);
 			set_front_led(0);

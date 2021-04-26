@@ -15,9 +15,10 @@
 #define NB_ELEMENTS_CONTROLLER 4
 #define DIST_THRESHOLD 150
 #define DIST_THRESHOLD_JEU 100
-#define SPEED_M1 400
-#define ROTATION_COEFF 2
+#define SPEED_M1 600
+#define ROTATION_COEFF 3
 #define WIDTH_THRESHOLD 100
+#define SPEED_M3 1000
 
 //threads du mode 0 :
 static thread_t* thd_mode_0_IR = NULL;
@@ -125,12 +126,10 @@ static THD_FUNCTION(thd_m1_camera, arg)
     int16_t speed_correction = 0;
     volatile int valeur_capteur = 0;
     //boucle infinie du thread
-//    set_body_led(1);
     while(chThdShouldTerminateX() == false){
     	valeur_capteur = get_prox(7);
-//      	if(get_prox(7) > DIST_THRESHOLD) {
-//        if((get_prox(0) > DIST_THRESHOLD) || (get_prox(7) > DIST_THRESHOLD)) {
-        if((get_prox(7) > DIST_THRESHOLD)) {
+//      if((get_prox(0) > DIST_THRESHOLD) || (get_prox(7) > DIST_THRESHOLD)) {
+        if(get_prox(7) > DIST_THRESHOLD) {
       		//Arret
       		left_motor_set_speed(0);
       		right_motor_set_speed(0);
@@ -202,15 +201,13 @@ static THD_FUNCTION(thd_m3, arg)
     chRegSetThreadName(__FUNCTION__);
 
     bool collision = false;
-    bool capteur_distance_actif = true;
     uint16_t compteur_capteur = 0;
     uint16_t compteur = 0;
     //boucle infinie du thread
     while(chThdShouldTerminateX() == false){
     	//detection collision
-    	if((get_prox(7) > DIST_THRESHOLD) && !collision && capteur_distance_actif) {
+    	if((get_prox(7) > DIST_THRESHOLD) && !collision) {
     		collision = true;
-//    		capteur_distance_actif = false;
     		//Instruction en cas de collision
     		set_body_led(1);
     		playMelody(MARIO_DEATH, ML_FORCE_CHANGE, NULL);
@@ -224,19 +221,35 @@ static THD_FUNCTION(thd_m3, arg)
         	float data_from_computer[4] = {0, 0, 0, 0};
         	uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, data_from_computer, NB_ELEMENTS_CONTROLLER);
         	if(size == NB_ELEMENTS_CONTROLLER){
+        		int right_speed = 0;
+        		int left_speed = 0;
         		data_from_computer[1] -= 180;
-        		if (data_from_computer[1] > -90 && data_from_computer[1] < 90){
-        			int right_speed = (90-data_from_computer[1]) / 90 * 1000 * data_from_computer[0] / 100;
-        			int left_speed = (-90-data_from_computer[1]) / (-90) * 1000 * data_from_computer[0] / 100;
-        			right_motor_set_speed(right_speed);
-        			left_motor_set_speed(left_speed);
+        		if (data_from_computer[1] > -90 && data_from_computer[1] < 	0){
+        			right_speed = (90-data_from_computer[1]) / 90 * SPEED_M3 * data_from_computer[0] / 100;
+        			left_speed = (-90-data_from_computer[1]) / (-90) * SPEED_M3 * data_from_computer[0] / 100;
+//        			right_motor_set_speed(right_speed);
+//        			left_motor_set_speed(left_speed);
         		}
-        		if (data_from_computer[1] < -90 || data_from_computer[1] > 90){
-        			int left_speed = -330 * data_from_computer[0] / 100;
-        			int right_speed = left_speed;
-        			right_motor_set_speed(right_speed);
-        			left_motor_set_speed(left_speed);
+        		else if (data_from_computer[1] > 90){
+        			right_speed = (90-data_from_computer[1]) / 90 * SPEED_M3 * data_from_computer[0] / 100;
+        			left_speed = -1 / 30 * data_from_computer[1] * SPEED_M3 * data_from_computer[0] / 100 + 5;
         		}
+        		else if (data_from_computer[1] < -90){
+        			right_speed = 1 / 30 * data_from_computer[1] * SPEED_M3 * data_from_computer[0] / 100 - 5;
+        			left_speed = (-90-data_from_computer[1]) / (-90) * SPEED_M3 * data_from_computer[0] / 100;
+        		}
+        		right_motor_set_speed(right_speed);
+        		left_motor_set_speed(left_speed);
+//        		if (data_from_computer[1] < -90 || data_from_computer[1] > 90){
+//        			int left_speed = -330 * data_from_computer[0] / 100;
+//        			int right_speed = left_speed;
+//        			right_motor_set_speed(right_speed);
+//        			left_motor_set_speed(left_speed);
+//        		}
+        	}
+        	else{
+            	right_motor_set_speed(0);
+            	left_motor_set_speed(0);
         	}
     	}
     	else {
@@ -250,12 +263,6 @@ static THD_FUNCTION(thd_m3, arg)
     			stopCurrentMelody();
     		}
     	}
-//    	if(compteur_capteur < 640 && !capteur_distance_actif) {
-//    		compteur_capteur++;
-//    	}
-//    	else {
-//    		capteur_distance_actif = true;
-//    	}
 
     	chThdSleepMilliseconds(60);
     }
@@ -269,40 +276,63 @@ static THD_FUNCTION(thd_m3, arg)
 //-----------------------------GESTION THREADS----------------------------------------
 
 void stop_thread(mode_robot mode_to_stop){
-	switch(mode_to_stop) {
-		case MODE0:
-			if (thd_mode_0_IR != NULL){
-				chThdTerminate(thd_mode_0_IR);
-				chThdWait(thd_mode_0_IR);
-				thd_mode_0_IR = NULL;
-				stopCurrentMelody();
-			}
+//	switch(mode_to_stop) {
+//		case MODE0:
+//			if (thd_mode_0_IR != NULL){
+//				chThdTerminate(thd_mode_0_IR);
+//				chThdWait(thd_mode_0_IR);
+//				thd_mode_0_IR = NULL;
+//				stopCurrentMelody();
+//			}
+//
+//			break;
+//		case MODE1:
+//			stop_thread_camera();
+//			if (thd_m1_position != NULL){
+//				chThdTerminate(thd_m1_position);
+//				chThdWait(thd_m1_position);
+//				thd_m1_position = NULL;
+//				right_motor_set_speed(0);
+//				left_motor_set_speed(0);
+//				stopCurrentMelody();
+//			}
+//
+//			break;
+//		case MODE2:
+//			break;
+//		case MODE3:
+//			if (thd_mode_3_manette != NULL){
+//				chThdTerminate(thd_mode_3_manette);
+//				chThdWait(thd_mode_3_manette);
+//				thd_mode_3_manette = NULL;
+//				stopCurrentMelody();
+//			}
+//			break;
+//		default :
+//			break;
+//	}
 
-			break;
-		case MODE1:
-			stop_thread_camera();
-			if (thd_m1_position != NULL){
-				chThdTerminate(thd_m1_position);
-				chThdWait(thd_m1_position);
-				thd_m1_position = NULL;
-				right_motor_set_speed(0);
-				left_motor_set_speed(0);
-				stopCurrentMelody();
-			}
-
-			break;
-		case MODE2:
-			break;
-		case MODE3:
-			if (thd_mode_3_manette != NULL){
-				chThdTerminate(thd_mode_3_manette);
-				chThdWait(thd_mode_3_manette);
-				thd_mode_3_manette = NULL;
-				stopCurrentMelody();
-			}
-			break;
-		default :
-			break;
+	//arrete tous les threads actifs
+	stop_thread_camera();
+	if (thd_mode_0_IR != NULL){
+		chThdTerminate(thd_mode_0_IR);
+		chThdWait(thd_mode_0_IR);
+		thd_mode_0_IR = NULL;
+		stopCurrentMelody();
+	}
+	if (thd_m1_position != NULL){
+		chThdTerminate(thd_m1_position);
+		chThdWait(thd_m1_position);
+		thd_m1_position = NULL;
+		right_motor_set_speed(0);
+		left_motor_set_speed(0);
+		stopCurrentMelody();
+	}
+	if (thd_mode_3_manette != NULL){
+		chThdTerminate(thd_mode_3_manette);
+		chThdWait(thd_mode_3_manette);
+		thd_mode_3_manette = NULL;
+		stopCurrentMelody();
 	}
 }
 
