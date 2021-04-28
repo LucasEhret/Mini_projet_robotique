@@ -21,6 +21,7 @@
 #include <audio/play_melody.h>
 #include "spi_comm.h"
 #include "audio/play_sound_file.h"
+#include "sensors/battery_level.h"
 
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
@@ -108,6 +109,7 @@ int main(void)
 	//init melody
 	playMelodyStart();
 	dac_start();
+//	battery_level_start();
 
     /** Inits the Inter Process Communication bus. */
     messagebus_init(&bus, &bus_lock, &bus_condvar);
@@ -119,6 +121,7 @@ int main(void)
     while (1) {
     	//waits 1 second
         chThdSleepMilliseconds(100);
+//        volatile float batterie = get_battery_percentage();
     }
 }
 

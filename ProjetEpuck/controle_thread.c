@@ -13,14 +13,14 @@
 #include <process_image.h>
 
 #define NB_ELEMENTS_CONTROLLER 4
-#define DIST_THRESHOLD 150
+#define DIST_THRESHOLD 300
 #define DIST_THRESHOLD_JEU 100
 #define SPEED_M1 400
 #define SPEED_M2 600
 #define ROTATION_COEFF_M1 2
-#define ROTATION_COEFF_M2 2
+#define ROTATION_COEFF_M2 3
 #define WIDTH_THRESHOLD 100
-#define SPEED_M3 1000
+#define SPEED_M3 800
 
 //threads du mode 0 :
 static thread_t* thd_mode_0_IR = NULL;
@@ -130,8 +130,7 @@ static THD_FUNCTION(thd_m1_camera, arg)
     //boucle infinie du thread
     while(chThdShouldTerminateX() == false){
     	valeur_capteur = get_prox(7);
-//      if((get_prox(0) > DIST_THRESHOLD) || (get_prox(7) > DIST_THRESHOLD)) {
-        if(get_prox(7) > DIST_THRESHOLD) {
+        if((get_prox(0) > DIST_THRESHOLD) || (get_prox(7) > DIST_THRESHOLD)) {
       		//Arret
       		left_motor_set_speed(0);
       		right_motor_set_speed(0);
@@ -146,7 +145,6 @@ static THD_FUNCTION(thd_m1_camera, arg)
             if(abs(speed_correction) < ROTATION_THRESHOLD){
             	speed_correction = 0;
             }
-            volatile tmp = get_line_width();
             if(get_line_width() > WIDTH_THRESHOLD){
                 //applies the speed from the PI regulator and the correction for the rotation
         		right_motor_set_speed(SPEED_M1 - ROTATION_COEFF_M1 * speed_correction);
@@ -177,15 +175,17 @@ static THD_FUNCTION(thd_m2_camera, arg)
     chRegSetThreadName(__FUNCTION__);
 
     int16_t speed_correction = 0;
+	uint16_t speed_right = SPEED_M2;
+	uint16_t speed_left = SPEED_M2;
 
     //boucle infinie du thread
     while(chThdShouldTerminateX() == false){
-    	uint16_t speed_right = SPEED_M2;
-    	uint16_t speed_left = SPEED_M2;
-        if(get_prox(7) > DIST_THRESHOLD / 3) {
+    	speed_right = SPEED_M2;
+    	speed_left = SPEED_M2;
+    	if((get_prox(0) > DIST_THRESHOLD) || (get_prox(7) > DIST_THRESHOLD)) {
       		//Acceleration
-        	speed_left = 1000;
-        	speed_left = 1000;
+        	speed_left = 800;
+        	speed_right = 800;
         	set_body_led(1);
       	}
         else{
@@ -198,11 +198,14 @@ static THD_FUNCTION(thd_m2_camera, arg)
 		if(abs(speed_correction) < ROTATION_THRESHOLD){
 			speed_correction = 0;
 		}
-		volatile tmp = get_line_width();
 		if(get_line_width() > WIDTH_THRESHOLD){
 			//applies the speed from the PI regulator and the correction for the rotation
 			right_motor_set_speed(speed_right - ROTATION_COEFF_M2 * speed_correction);
 			left_motor_set_speed(speed_left + ROTATION_COEFF_M2 * speed_correction);
+		}
+		else {
+			left_motor_set_speed(0);
+			right_motor_set_speed(0);
 		}
 		chThdSleepMilliseconds(50);
     }
@@ -228,55 +231,41 @@ static THD_FUNCTION(thd_m3, arg)
     chRegSetThreadName(__FUNCTION__);
 
     bool collision = false;
-    uint16_t compteur_capteur = 0;
     uint16_t compteur = 0;
+	int right_speed = 0;
+	int left_speed = 0;
     //boucle infinie du thread
     while(chThdShouldTerminateX() == false){
+    	float data_from_computer[4] = {0, 0, 0, 0};
+    	uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, data_from_computer, NB_ELEMENTS_CONTROLLER);
     	//detection collision
-    	if((get_prox(7) > DIST_THRESHOLD) && !collision) {
+    	if((get_prox(7) > DIST_THRESHOLD) && !collision && !data_from_computer[2]) {
     		collision = true;
     		//Instruction en cas de collision
     		set_body_led(1);
-    		playMelody(MARIO_DEATH, ML_FORCE_CHANGE, NULL);
+//    		playMelody(MARIO_DEATH, ML_FORCE_CHANGE, NULL); !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     		left_motor_set_speed(700);
     		right_motor_set_speed(-700);
-    		compteur_capteur = 0;
     		compteur = 0;
     	}
     	if(!collision) {
     		set_body_led(0);
-        	float data_from_computer[4] = {0, 0, 0, 0};
-        	uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, data_from_computer, NB_ELEMENTS_CONTROLLER);
         	if(size == NB_ELEMENTS_CONTROLLER){
-        		int right_speed = 0;
-        		int left_speed = 0;
         		data_from_computer[1] -= 180;
-        		if (data_from_computer[1] > -90 && data_from_computer[1] < 	0){
-        			right_speed = (90-data_from_computer[1]) / 90 * SPEED_M3 * data_from_computer[0] / 100;
-        			left_speed = (-90-data_from_computer[1]) / (-90) * SPEED_M3 * data_from_computer[0] / 100;
-//        			right_motor_set_speed(right_speed);
-//        			left_motor_set_speed(left_speed);
+        		if (data_from_computer[1] > -90 && data_from_computer[1] < 90){
+        			right_speed = (90 - data_from_computer[1]) / 90 * SPEED_M3 * data_from_computer[0] / 100;
+        			left_speed = (-90 - data_from_computer[1]) / (-90) * SPEED_M3 * data_from_computer[0] / 100;
         		}
         		else if (data_from_computer[1] > 90){
-        			right_speed = (90-data_from_computer[1]) / 90 * SPEED_M3 * data_from_computer[0] / 100;
-        			left_speed = -1 / 30 * data_from_computer[1] * SPEED_M3 * data_from_computer[0] / 100 + 5;
+        			right_speed = (90 - data_from_computer[1]) / 90 * SPEED_M3 * data_from_computer[0] / 100;
+        			left_speed = (150 - data_from_computer[1]) / 30 * SPEED_M3 * data_from_computer[0] / 100 ;
         		}
         		else if (data_from_computer[1] < -90){
-        			right_speed = 1 / 30 * data_from_computer[1] * SPEED_M3 * data_from_computer[0] / 100 - 5;
-        			left_speed = (-90-data_from_computer[1]) / (-90) * SPEED_M3 * data_from_computer[0] / 100;
+        			right_speed = (150 + data_from_computer[1]) / 30 * SPEED_M3 * data_from_computer[0] / 100;
+        			left_speed = (-90 - data_from_computer[1]) / (-90) * SPEED_M3 * data_from_computer[0] / 100;
         		}
         		right_motor_set_speed(right_speed);
         		left_motor_set_speed(left_speed);
-//        		if (data_from_computer[1] < -90 || data_from_computer[1] > 90){
-//        			int left_speed = -330 * data_from_computer[0] / 100;
-//        			int right_speed = left_speed;
-//        			right_motor_set_speed(right_speed);
-//        			left_motor_set_speed(left_speed);
-//        		}
-        	}
-        	else{
-            	right_motor_set_speed(0);
-            	left_motor_set_speed(0);
         	}
     	}
     	else {
@@ -290,7 +279,6 @@ static THD_FUNCTION(thd_m3, arg)
     			stopCurrentMelody();
     		}
     	}
-
     	chThdSleepMilliseconds(60);
     }
 }
@@ -353,7 +341,7 @@ void run_thread_mode_1(void){
 void run_thread_mode_2(void){
 	process_image_start();
 	thd_mode_2 = chThdCreateStatic(thd_m2_camera_wa, sizeof(thd_m2_camera_wa), NORMALPRIO, thd_m2_camera, NULL);
-	playMelody(IMPOSSIBLE_MISSION, ML_FORCE_CHANGE, NULL);
+//	playMelody(IMPOSSIBLE_MISSION, ML_FORCE_CHANGE, NULL); ////////////////////////////////////////////////////////////////////////////////
 }
 
 

@@ -23,8 +23,8 @@ void SendFloatToComputer(BaseSequentialStream* out, float* data, uint16_t size)
 */
 uint16_t ReceiveInt16FromComputer(BaseSequentialStream* in, float* data, uint16_t size){
 
-	volatile uint8_t c1, c2;
-	volatile uint16_t temp_size = 0;
+	uint8_t c1, c2;
+	uint16_t temp_size = 0;
 	uint16_t i=0;
 
 	uint8_t state = 0;
