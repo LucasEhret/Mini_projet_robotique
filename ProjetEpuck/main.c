@@ -23,22 +23,20 @@
 #include "audio/play_sound_file.h"
 #include "sensors/battery_level.h"
 
+#define WORKSPACE_AREA			1024
+
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
 
-//static BSEMAPHORE_DECL(sendToComputer_sem, TRUE);
-
-static THD_WORKING_AREA(selector_thd_wa, 1024);
+static THD_WORKING_AREA(selector_thd_wa, WORKSPACE_AREA);
 static THD_FUNCTION(selector_thd, arg)
 {
     (void) arg;
     chRegSetThreadName(__FUNCTION__);
 
-
     uint8_t position_select = 0;
     uint8_t new_position_select = 0;
-
     while(1){
     	//detection de changement de position du selecteur
     	new_position_select = get_selector();
@@ -46,9 +44,6 @@ static THD_FUNCTION(selector_thd, arg)
     		position_select = new_position_select;
     		//arret des differents threads
 			stop_thread();
-			clear_leds();
-			set_body_led(0);
-			set_front_led(0);
 			switch(position_select) {
 						case MODE0: //mode attente
 							run_thread_mode_0();
@@ -109,7 +104,6 @@ int main(void)
 	//init melody
 	playMelodyStart();
 	dac_start();
-//	battery_level_start();
 
     /** Inits the Inter Process Communication bus. */
     messagebus_init(&bus, &bus_lock, &bus_condvar);
@@ -120,8 +114,7 @@ int main(void)
     /* Infinite loop. */
     while (1) {
     	//waits 1 second
-        chThdSleepMilliseconds(100);
-//        volatile float batterie = get_battery_percentage();
+        chThdSleepMilliseconds(1000);
     }
 }
 

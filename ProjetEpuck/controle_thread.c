@@ -12,15 +12,51 @@
 #include <audio/play_melody.h>
 #include <process_image.h>
 
-#define NB_ELEMENTS_CONTROLLER 4
-#define DIST_THRESHOLD 300
-#define DIST_THRESHOLD_JEU 100
-#define SPEED_M1 400
-#define SPEED_M2 600
-#define ROTATION_COEFF_M1 2
-#define ROTATION_COEFF_M2 3
-#define WIDTH_THRESHOLD 100
-#define SPEED_M3 800
+//define général
+#define LED_RGB_RED 			100, 0, 0
+#define LED_RGB_BLUE			0, 0, 100
+#define LED_RGB_OFF				0, 0, 0
+#define ON 						1
+#define OFF 					0
+#define ARRET_MOTOR				0
+#define WORKSPACE_AREA			1024
+#define WORKSPACE_AREA_EXTENDED	2048
+#define NB_CAPTEUR				8
+
+//define mode 0
+#define DIST_THRESHOLD_JEU_M0 	100
+
+//define mode 1
+#define DIST_THRESHOLD_M1 		300
+#define SPEED_M1 				400
+#define ROTATION_COEFF_M1 		2
+#define WIDTH_THRESHOLD_M1 		100
+
+//define mode 2
+#define SPEED_M2 				600
+#define SPEED_ACC_M2 			800
+#define ROTATION_COEFF_M2 		3
+#define DIST_THRESHOLD_M2		300
+
+//define mode 3
+#define NB_ELEMENTS_CONTROLLER 	4
+#define SPEED_M3 				700
+#define SPEED_BOOST_M3			1100
+#define SPEED_DEATH_M3 			700
+#define TEMPS_ROTA_DEATH_M3 	45
+#define DIST_THRESHOLD_M3		300
+#define TMPS_LOAD_BOOST_M3		100
+#define TMPS_BOOST_ON_M3 		20
+#define PAS_LED_BOOST_ON		2
+#define PAS_LED_BOOST_LOAD		12
+typedef enum {
+	MODULE_JOYSTICK = 0,
+	ANGLE_JOYSTICK,
+	BOUTON_A,
+	GACHETTE
+} indices_param_controller;
+
+
 
 //threads du mode 0 :
 static thread_t* thd_mode_0_IR = NULL;
@@ -34,17 +70,15 @@ static thread_t* thd_mode_2 = NULL;
 //threads du mode 3 :
 static thread_t* thd_mode_3_manette = NULL;
 
-//msg_t *buf;
-//static MAILBOX_DECL(collision, buf, 1);
-
 //-------------------------------MODE 0-----------------------------------------------------------
 /*Thread propre au mode 0 : attente
- * 	-> petit jeu avec LEDs et capteurs de distance. (priorité normale)
+ * 	-> petit jeu avec LEDs et capteurs de distance.
+ * 	-> (priorité normale)
  */
 
 
 //thread qui utilise les capteurs de distance, et allume les leds les plus proches de l'objet détecté
-static THD_WORKING_AREA(thd_m0_capteur_distance_wa, 1024);
+static THD_WORKING_AREA(thd_m0_capteur_distance_wa, WORKSPACE_AREA);
 static THD_FUNCTION(thd_m0_capteur_distance, arg)
 {
     (void) arg;
@@ -55,10 +89,10 @@ static THD_FUNCTION(thd_m0_capteur_distance, arg)
     //boucle infinie du thread
     while(chThdShouldTerminateX() == false){
         //Détection obstacles frontaux
-    	volatile uint8_t indice_capteur = 10;
-    	uint8_t temp_val_max = 0;
-    	for (uint8_t i = 0; i < 8; i++){
-    		if (get_prox(i) > temp_val_max && get_prox(i) > DIST_THRESHOLD_JEU){
+    	uint8_t indice_capteur = NB_CAPTEUR;
+    	uint16_t temp_val_max = 0;
+    	for (uint8_t i = 0; i < NB_CAPTEUR; i++){
+    		if (get_prox(i) > temp_val_max && get_prox(i) > DIST_THRESHOLD_JEU_M0){
     			temp_val_max = get_prox(i);
     			indice_capteur = i;
     		}
@@ -66,38 +100,38 @@ static THD_FUNCTION(thd_m0_capteur_distance, arg)
 		switch(indice_capteur){
 			case 0 :
 				//bloqué par le miroir
-//				clear_leds();
-//				set_led(LED1, 1);
+				clear_leds();
+				set_led(LED1, ON);
 				break;
 			case 1 :
 				clear_leds();
-				set_rgb_led(LED2, 100, 0, 0);
+				set_rgb_led(LED2, LED_RGB_RED);
 				break;
 			case 2 :
 				clear_leds();
-				set_led(LED3, 1);
+				set_led(LED3, ON);
 				break;
 			case 3 :
 				clear_leds();
-				set_rgb_led(LED4, 100, 0, 0); // marche pas
-				set_led(LED5, 1);
+				set_rgb_led(LED4, LED_RGB_RED); // led4 ne fonctionne pas
+				set_led(LED5, ON);
 				break;
 			case 4 :
 				clear_leds();
-				set_rgb_led(LED6, 100, 0, 0);
-				set_led(LED5, 1);
+				set_rgb_led(LED6, LED_RGB_RED);
+				set_led(LED5, ON);
 				break;
 			case 5 :
 				clear_leds();
-				set_led(LED7, 1);
+				set_led(LED7, ON);
 				break;
 			case 6 :
 				clear_leds();
-				set_rgb_led(LED8, 100, 0, 0);
+				set_rgb_led(LED8, LED_RGB_RED);
 				break;
 			case 7 :
 				clear_leds();
-				set_led(LED1, 1);
+				set_led(LED1, ON);
 				break;
 			default :
 				clear_leds();
@@ -110,34 +144,29 @@ static THD_FUNCTION(thd_m0_capteur_distance, arg)
 
 
 //-------------------------------MODE 1-----------------------------------------------------------
-/* Threads propre au mode 1 : conduite respectueuse
- *  -> Détection des obstacles  (priorité +)
- *  -> Suivie de la ligne noire (priorité normale)
- *  ->
- *  ->
+/* Thread propre au mode 1 : conduite respectueuse
+ *  -> Détection des obstacles
+ *  -> Suivie de la ligne noire
+ *  -> (priorité normale)
  */
 
-
-//thread qui récupère les images de la caméra
-static THD_WORKING_AREA(thd_m1_camera_wa, 2048);
+static THD_WORKING_AREA(thd_m1_camera_wa, WORKSPACE_AREA_EXTENDED);
 static THD_FUNCTION(thd_m1_camera, arg)
 {
     (void) arg;
     chRegSetThreadName(__FUNCTION__);
 
     int16_t speed_correction = 0;
-    volatile int valeur_capteur = 0;
     //boucle infinie du thread
     while(chThdShouldTerminateX() == false){
-    	valeur_capteur = get_prox(7);
-        if((get_prox(0) > DIST_THRESHOLD) || (get_prox(7) > DIST_THRESHOLD)) {
+        if((get_prox(0) > DIST_THRESHOLD_M1) || (get_prox(7) > DIST_THRESHOLD_M1)) {
       		//Arret
-      		left_motor_set_speed(0);
-      		right_motor_set_speed(0);
-      		set_body_led(1);
+      		left_motor_set_speed(ARRET_MOTOR);
+      		right_motor_set_speed(ARRET_MOTOR);
+      		set_body_led(ON);
       	}
       	else{
-      		set_body_led(0);
+      		set_body_led(OFF);
             //computes a correction factor to let the robot rotate to be in front of the line
             speed_correction = (get_line_position() - (IMAGE_BUFFER_SIZE/2));
 
@@ -145,14 +174,14 @@ static THD_FUNCTION(thd_m1_camera, arg)
             if(abs(speed_correction) < ROTATION_THRESHOLD){
             	speed_correction = 0;
             }
-            if(get_line_width() > WIDTH_THRESHOLD){
-                //applies the speed from the PI regulator and the correction for the rotation
+            if(get_line_width() > WIDTH_THRESHOLD_M1){
+                //applies the speed and the correction for the rotation
         		right_motor_set_speed(SPEED_M1 - ROTATION_COEFF_M1 * speed_correction);
         		left_motor_set_speed(SPEED_M1 + ROTATION_COEFF_M1 * speed_correction);
             }
             else{
-          		left_motor_set_speed(0);
-          		right_motor_set_speed(0);
+          		left_motor_set_speed(ARRET_MOTOR);
+          		right_motor_set_speed(ARRET_MOTOR);
             }
       	}
 		chThdSleepMilliseconds(50);
@@ -162,13 +191,14 @@ static THD_FUNCTION(thd_m1_camera, arg)
 
 
 //-------------------------------MODE 2-----------------------------------------------------------
-/* Threads propre au mode 2 : conduite Tom Cruise
- * -> Suivi de la ligne noire (priorité normale)
- *               (réutilisation du thread du mode 1 mais avec une vitesse du robot plus élevée)
+/* Thread propre au mode 2 : conduite Tom Cruise
+ * -> Suivi de la ligne noire
+ * (réutilisation du thread du mode 1 mais avec une vitesse du robot plus élevée)
+ *  -> (priorité normale)
  */
 
 
-static THD_WORKING_AREA(thd_m2_camera_wa, 1024);
+static THD_WORKING_AREA(thd_m2_camera_wa, WORKSPACE_AREA);
 static THD_FUNCTION(thd_m2_camera, arg)
 {
     (void) arg;
@@ -182,14 +212,14 @@ static THD_FUNCTION(thd_m2_camera, arg)
     while(chThdShouldTerminateX() == false){
     	speed_right = SPEED_M2;
     	speed_left = SPEED_M2;
-    	if((get_prox(0) > DIST_THRESHOLD) || (get_prox(7) > DIST_THRESHOLD)) {
+    	if((get_prox(0) > DIST_THRESHOLD_M2) || (get_prox(7) > DIST_THRESHOLD_M2)) {
       		//Acceleration
-        	speed_left = 800;
-        	speed_right = 800;
-        	set_body_led(1);
+        	speed_left = SPEED_ACC_M2;
+        	speed_right = SPEED_ACC_M2;
+        	set_body_led(ON);
       	}
         else{
-        	set_body_led(0);
+        	set_body_led(OFF);
         }
 		//computes a correction factor to let the robot rotate to be in front of the line
 		speed_correction = (get_line_position() - (IMAGE_BUFFER_SIZE/2));
@@ -198,14 +228,14 @@ static THD_FUNCTION(thd_m2_camera, arg)
 		if(abs(speed_correction) < ROTATION_THRESHOLD){
 			speed_correction = 0;
 		}
-		if(get_line_width() > WIDTH_THRESHOLD){
-			//applies the speed from the PI regulator and the correction for the rotation
+		if(get_line_width() > WIDTH_THRESHOLD_M1){
+			//applies the speed and the correction for the rotation
 			right_motor_set_speed(speed_right - ROTATION_COEFF_M2 * speed_correction);
 			left_motor_set_speed(speed_left + ROTATION_COEFF_M2 * speed_correction);
 		}
 		else {
-			left_motor_set_speed(0);
-			right_motor_set_speed(0);
+			left_motor_set_speed(ARRET_MOTOR);
+			right_motor_set_speed(ARRET_MOTOR);
 		}
 		chThdSleepMilliseconds(50);
     }
@@ -216,69 +246,177 @@ static THD_FUNCTION(thd_m2_camera, arg)
 
 //-------------------------------MODE 3-----------------------------------------------------------
 /* Threads propre au mode 3 : contrôle à la manette
- *  -> Détection des obstacle (priorité +)
- *  -> Réception manette      (priorité normale)
- *
+ *  -> Détection des obstacle
+ *  -> Réception manette
+ *  (priorité normale)
  */
 
 
 
 //thread qui utilise les capteurs de distance pour faire un tour sur lui meme quand il rencontre un obstacle en mode manette
-static THD_WORKING_AREA(thd_m3_wa, 2048);
+static THD_WORKING_AREA(thd_m3_wa, WORKSPACE_AREA_EXTENDED);
 static THD_FUNCTION(thd_m3, arg)
 {
     (void) arg;
     chRegSetThreadName(__FUNCTION__);
 
     bool collision = false;
-    uint16_t compteur = 0;
-	int right_speed = 0;
-	int left_speed = 0;
+    uint8_t compteur = 0;
+	int16_t right_speed = 0;
+	int16_t left_speed = 0;
+	uint16_t coeff_speed = 0;
+	bool boost_ready = false;
+	bool boost_on = false;
+	uint8_t timer_boost = 0;
+
     //boucle infinie du thread
     while(chThdShouldTerminateX() == false){
-    	float data_from_computer[4] = {0, 0, 0, 0};
+    	float data_from_computer[NB_ELEMENTS_CONTROLLER] = {0, 0, 0, 0};
+    	/*
+    	 * data_from_computer contient les données envoyées par la manette :
+    	 * [MODULE_JOYSTICK] : controle la vitesse
+    	 * [ANGLE_JOYSTICK] : fait tourner le robot
+    	 * [BOUTON_A] : active/désactive les capteurs de distance
+    	 * [GACHETTE] : lance le boost
+    	 */
+    	//réception des données de la manette via script python et bluetooth
     	uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, data_from_computer, NB_ELEMENTS_CONTROLLER);
     	//detection collision
-    	if((get_prox(7) > DIST_THRESHOLD) && !collision && !data_from_computer[2]) {
+    	if((get_prox(7) > DIST_THRESHOLD_M3 || get_prox(0) > DIST_THRESHOLD_M3) && !collision && !data_from_computer[BOUTON_A]) {
     		collision = true;
     		//Instruction en cas de collision
-    		set_body_led(1);
+    		set_body_led(ON);
 //    		playMelody(MARIO_DEATH, ML_FORCE_CHANGE, NULL); !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    		left_motor_set_speed(700);
-    		right_motor_set_speed(-700);
+    		left_motor_set_speed(SPEED_DEATH_M3);
+    		right_motor_set_speed(-SPEED_DEATH_M3);
     		compteur = 0;
     	}
     	if(!collision) {
-    		set_body_led(0);
+    		set_body_led(OFF);
         	if(size == NB_ELEMENTS_CONTROLLER){
-        		data_from_computer[1] -= 180;
-        		if (data_from_computer[1] > -90 && data_from_computer[1] < 90){
-        			right_speed = (90 - data_from_computer[1]) / 90 * SPEED_M3 * data_from_computer[0] / 100;
-        			left_speed = (-90 - data_from_computer[1]) / (-90) * SPEED_M3 * data_from_computer[0] / 100;
+        		//prise en compte du boost ou vitesse normale
+        		coeff_speed = SPEED_M3;
+        		if(boost_ready && data_from_computer[GACHETTE] == 1){
+        			boost_ready = false;
+        			boost_on = true;
+        			timer_boost = 0;
         		}
-        		else if (data_from_computer[1] > 90){
-        			right_speed = (90 - data_from_computer[1]) / 90 * SPEED_M3 * data_from_computer[0] / 100;
-        			left_speed = (150 - data_from_computer[1]) / 30 * SPEED_M3 * data_from_computer[0] / 100 ;
+        		if(boost_on){
+        			coeff_speed = SPEED_BOOST_M3;
         		}
-        		else if (data_from_computer[1] < -90){
-        			right_speed = (150 + data_from_computer[1]) / 30 * SPEED_M3 * data_from_computer[0] / 100;
-        			left_speed = (-90 - data_from_computer[1]) / (-90) * SPEED_M3 * data_from_computer[0] / 100;
+        		//ramène la valeur de l'angle du joystick entre -180 et 180
+        		data_from_computer[ANGLE_JOYSTICK] -= 180;
+        		/*
+        		 * calcul des vitesses des deux roues en fonction de l'angle du joystick et de son amplitude
+        		 * -> 3 zones distinctes : entre -90° et 90°, supérieur à 90°, et inférieur à 90°
+        		 * vitesse = coeff en fonction de l'angle du joystick (valeur entre -1 et 2) * constante de vitesse * amplitude du joystick nomralisée
+        		 */
+        		if (data_from_computer[ANGLE_JOYSTICK] > -90 && data_from_computer[ANGLE_JOYSTICK] < 90){
+        			right_speed = (90 - data_from_computer[ANGLE_JOYSTICK]) / 90 * coeff_speed * data_from_computer[MODULE_JOYSTICK] / 100;
+        			left_speed = (-90 - data_from_computer[ANGLE_JOYSTICK]) / (-90) * coeff_speed * data_from_computer[MODULE_JOYSTICK] / 100;
+        		}
+        		else if (data_from_computer[ANGLE_JOYSTICK] > 90){
+        			right_speed = (90 - data_from_computer[ANGLE_JOYSTICK]) / 90 * coeff_speed * data_from_computer[MODULE_JOYSTICK] / 100;
+        			left_speed = (150 - data_from_computer[ANGLE_JOYSTICK]) / 30 * coeff_speed * data_from_computer[MODULE_JOYSTICK] / 100 ;
+        		}
+        		else if (data_from_computer[ANGLE_JOYSTICK] < -90){
+        			right_speed = (150 + data_from_computer[ANGLE_JOYSTICK]) / 30 * coeff_speed * data_from_computer[MODULE_JOYSTICK] / 100;
+        			left_speed = (-90 - data_from_computer[ANGLE_JOYSTICK]) / (-90) * coeff_speed * data_from_computer[MODULE_JOYSTICK] / 100;
         		}
         		right_motor_set_speed(right_speed);
         		left_motor_set_speed(left_speed);
         	}
     	}
+    	//gestion du temps si collision
     	else {
-    		if(compteur < 45){
+    		if(compteur < TEMPS_ROTA_DEATH_M3){
     			compteur++;
     		}
     		else {
     			collision = false;
-    			left_motor_set_speed(0);
-    			right_motor_set_speed(0);
+    			left_motor_set_speed(ARRET_MOTOR);
+    			right_motor_set_speed(ARRET_MOTOR);
     			stopCurrentMelody();
     		}
     	}
+
+    	//Affichage du chargement du boost
+    	if(!boost_ready && !boost_on){
+    		timer_boost++;
+        	switch(timer_boost){
+        		case PAS_LED_BOOST_LOAD:
+        			set_led(LED1, ON);
+        			break;
+        		case 2*PAS_LED_BOOST_LOAD:
+        			set_rgb_led(LED2, LED_RGB_RED);
+        			break;
+        		case 3*PAS_LED_BOOST_LOAD:
+        			set_led(LED3, ON);
+        			break;
+        		case 4*PAS_LED_BOOST_LOAD:
+        			set_rgb_led(LED4, LED_RGB_RED);
+        			break;
+        		case 5*PAS_LED_BOOST_LOAD:
+        			set_led(LED5, ON);
+        			break;
+        		case 6*PAS_LED_BOOST_LOAD:
+        			set_rgb_led(LED6, LED_RGB_RED);
+        			break;
+        		case 7*PAS_LED_BOOST_LOAD:
+        			set_led(LED7, ON);
+        			break;
+        		case 8*PAS_LED_BOOST_LOAD:
+        			set_rgb_led(LED8, LED_RGB_RED);
+        			break;
+        		case TMPS_LOAD_BOOST_M3:
+            		timer_boost = 0;
+            		boost_ready = true;
+            		set_rgb_led(LED2, LED_RGB_BLUE);
+            		set_rgb_led(LED4, LED_RGB_BLUE);
+            		set_rgb_led(LED6, LED_RGB_BLUE);
+            		set_rgb_led(LED8, LED_RGB_BLUE);
+            		break;
+        		default:
+        			break;
+        	}
+    	}
+    	//Affichage lors du l'utilisation du boost
+    	if(boost_on){
+    		timer_boost++;
+        	switch(timer_boost){
+        		case PAS_LED_BOOST_ON:
+        			set_rgb_led(LED8, LED_RGB_OFF);
+        			break;
+        		case 2*PAS_LED_BOOST_ON:
+        			set_led(LED7, OFF);
+        			break;
+        		case 3*PAS_LED_BOOST_ON:
+        			set_rgb_led(LED6, LED_RGB_OFF);
+        			break;
+        		case 4*PAS_LED_BOOST_ON:
+        			set_led(LED5, OFF);
+        			break;
+        		case 5*PAS_LED_BOOST_ON:
+        			set_rgb_led(LED4, LED_RGB_OFF);
+        			break;
+        		case 6*PAS_LED_BOOST_ON:
+        			set_led(LED3, OFF);
+        			break;
+        		case 7*PAS_LED_BOOST_ON:
+        			set_rgb_led(LED2, LED_RGB_OFF);
+        			break;
+        		case 8*PAS_LED_BOOST_ON:
+        			set_led(LED1, OFF);
+        			break;
+        		case TMPS_BOOST_ON_M3:
+        			boost_on = false;
+        			timer_boost = 0;
+        			break;
+        		default:
+        			break;
+        	}
+    	}
+
     	chThdSleepMilliseconds(60);
     }
 }
@@ -292,35 +430,34 @@ static THD_FUNCTION(thd_m3, arg)
 
 void stop_thread(void){
 
-	//arrete tous les threads actifs
+	//arrete tous les threads actifs et remise à 0 des leds/moteurs
 	stop_thread_camera();
+	right_motor_set_speed(ARRET_MOTOR);
+	left_motor_set_speed(ARRET_MOTOR);
+	clear_leds();
+	set_body_led(OFF);
+	set_front_led(OFF);
+	stopCurrentMelody();
+
 	if (thd_mode_0_IR != NULL){
 		chThdTerminate(thd_mode_0_IR);
 		chThdWait(thd_mode_0_IR);
 		thd_mode_0_IR = NULL;
-		stopCurrentMelody();
 	}
 	if (thd_m1_position != NULL){
 		chThdTerminate(thd_m1_position);
 		chThdWait(thd_m1_position);
 		thd_m1_position = NULL;
-		right_motor_set_speed(0);
-		left_motor_set_speed(0);
-		stopCurrentMelody();
 	}
 	if (thd_mode_2 != NULL){
 		chThdTerminate(thd_mode_2);
 		chThdWait(thd_mode_2);
 		thd_mode_2 = NULL;
-		right_motor_set_speed(0);
-		left_motor_set_speed(0);
-		stopCurrentMelody();
 	}
 	if (thd_mode_3_manette != NULL){
 		chThdTerminate(thd_mode_3_manette);
 		chThdWait(thd_mode_3_manette);
 		thd_mode_3_manette = NULL;
-		stopCurrentMelody();
 	}
 }
 

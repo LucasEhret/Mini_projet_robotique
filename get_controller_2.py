@@ -118,14 +118,13 @@ while True:
                         data_to_send[0] = 0
                         data_to_send[1] = 0
             elif event.type == pygame.JOYBUTTONDOWN:
-                #detection de A
+                #inversion de A
                 if event.button == 0:
-                    data_to_send[2] += 1
-                #detection de B
-                if event.button == 1:
-                    data_to_send[2] -= 1
-                    if data_to_send[2] < 0:
+                    if data_to_send[2] == 1:
                         data_to_send[2] = 0
+                    else:
+                        data_to_send[2] = 1
+                #détection gachette
                 if event.button == 5:
                     data_to_send[3] = 1
             elif event.type == pygame.JOYBUTTONUP:
