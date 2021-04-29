@@ -43,12 +43,12 @@
 #define SPEED_M3 				700
 #define SPEED_BOOST_M3			1100
 #define SPEED_DEATH_M3 			700
-#define TEMPS_ROTA_DEATH_M3 	45
+#define TEMPS_ROTA_DEATH_M3 	20
 #define DIST_THRESHOLD_M3		300
-#define TMPS_LOAD_BOOST_M3		100
+#define TMPS_LOAD_BOOST_M3		45
 #define TMPS_BOOST_ON_M3 		20
 #define PAS_LED_BOOST_ON		2
-#define PAS_LED_BOOST_LOAD		12
+#define PAS_LED_BOOST_LOAD		5
 typedef enum {
 	MODULE_JOYSTICK = 0,
 	ANGLE_JOYSTICK,
@@ -58,16 +58,16 @@ typedef enum {
 
 
 
-//threads du mode 0 :
+//thread du mode 0 :
 static thread_t* thd_mode_0_IR = NULL;
 
-//threads du mode 1 :
+//thread du mode 1 :
 static thread_t* thd_m1_position = NULL;
 
-//threads du mode 2 :
+//thread du mode 2 :
 static thread_t* thd_mode_2 = NULL;
 
-//threads du mode 3 :
+//thread du mode 3 :
 static thread_t* thd_mode_3_manette = NULL;
 
 //-------------------------------MODE 0-----------------------------------------------------------
@@ -273,7 +273,7 @@ static THD_FUNCTION(thd_m3, arg)
     while(chThdShouldTerminateX() == false){
     	float data_from_computer[NB_ELEMENTS_CONTROLLER] = {0, 0, 0, 0};
     	/*
-    	 * data_from_computer contient les données envoyées par la manette :
+    	 * data_from_computer contient les données envoyées par la manette en bluetooth (via le script python "get_controller.py"):
     	 * [MODULE_JOYSTICK] : controle la vitesse
     	 * [ANGLE_JOYSTICK] : fait tourner le robot
     	 * [BOUTON_A] : active/désactive les capteurs de distance
@@ -291,6 +291,10 @@ static THD_FUNCTION(thd_m3, arg)
     		right_motor_set_speed(-SPEED_DEATH_M3);
     		compteur = 0;
     	}
+    	//Affichage led pour l'activation des détecteurs de proximité
+    	if(data_from_computer[BOUTON_A] == 1) set_front_led(ON);
+    	if (data_from_computer[BOUTON_A] == 0) set_front_led(OFF);
+
     	if(!collision) {
     		set_body_led(OFF);
         	if(size == NB_ELEMENTS_CONTROLLER){
@@ -308,8 +312,8 @@ static THD_FUNCTION(thd_m3, arg)
         		data_from_computer[ANGLE_JOYSTICK] -= 180;
         		/*
         		 * calcul des vitesses des deux roues en fonction de l'angle du joystick et de son amplitude
-        		 * -> 3 zones distinctes : entre -90° et 90°, supérieur à 90°, et inférieur à 90°
-        		 * vitesse = coeff en fonction de l'angle du joystick (valeur entre -1 et 2) * constante de vitesse * amplitude du joystick nomralisée
+        		 * -> 3 zones distinctes (selon angle du joystick) : entre -90° et 90°, supérieur à 90°, et inférieur à -90°
+        		 * vitesse = coeff en fonction de l'angle du joystick (valeur entre -1 et 2, calcul pour chaque roue) * constante de vitesse * amplitude du joystick nomralisée
         		 */
         		if (data_from_computer[ANGLE_JOYSTICK] > -90 && data_from_computer[ANGLE_JOYSTICK] < 90){
         			right_speed = (90 - data_from_computer[ANGLE_JOYSTICK]) / 90 * coeff_speed * data_from_computer[MODULE_JOYSTICK] / 100;
@@ -327,7 +331,7 @@ static THD_FUNCTION(thd_m3, arg)
         		left_motor_set_speed(left_speed);
         	}
     	}
-    	//gestion du temps si collision
+    	//gestion du temps en cas de collision
     	else {
     		if(compteur < TEMPS_ROTA_DEATH_M3){
     			compteur++;
@@ -340,7 +344,7 @@ static THD_FUNCTION(thd_m3, arg)
     		}
     	}
 
-    	//Affichage du chargement du boost
+    	//Affichage led du chargement du boost
     	if(!boost_ready && !boost_on){
     		timer_boost++;
         	switch(timer_boost){
@@ -380,7 +384,7 @@ static THD_FUNCTION(thd_m3, arg)
         			break;
         	}
     	}
-    	//Affichage lors du l'utilisation du boost
+    	//Affichage led lors du l'utilisation du boost
     	if(boost_on){
     		timer_boost++;
         	switch(timer_boost){
@@ -416,7 +420,6 @@ static THD_FUNCTION(thd_m3, arg)
         			break;
         	}
     	}
-
     	chThdSleepMilliseconds(60);
     }
 }
@@ -470,7 +473,7 @@ void run_thread_mode_0(void){
 void run_thread_mode_1(void){
 	process_image_start();
 	thd_m1_position = chThdCreateStatic(thd_m1_camera_wa, sizeof(thd_m1_camera_wa), NORMALPRIO, thd_m1_camera, NULL);
-//	playMelody(PIRATES_OF_THE_CARIBBEAN, 0, NULL);
+//	playMelody(PIRATES_OF_THE_CARIBBEAN, 0, NULL); ////////////////////////////////////////////////////////////////////////////////////////
 
 }
 
