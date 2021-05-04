@@ -14,7 +14,8 @@ typedef enum {
 
 
 void stop_thread(void);
-void run_thread_mode_3(void);
+void start_thread_mode_3(void);
+void run_thread_manette(void);
 void run_thread_mode_1(void);
 void run_thread_mode_0(void);
 

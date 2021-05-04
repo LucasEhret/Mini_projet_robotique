@@ -55,7 +55,7 @@ static THD_FUNCTION(selector_thd, arg)
 							run_thread_mode_2();
 							break;
 						case MODE3: //mode 3 : mode manette
-							run_thread_mode_3();
+							run_thread_manette();
 							break;
 						default :
 							break;
@@ -92,6 +92,7 @@ int main(void)
     //starts the camera
     dcmi_start();
 	po8030_start();
+    process_image_start();
 	//inits the motors
 	motors_init();
 	//init leds
@@ -108,8 +109,12 @@ int main(void)
     /** Inits the Inter Process Communication bus. */
     messagebus_init(&bus, &bus_lock, &bus_condvar);
 
+    //initalisation de la gestion de la manette
+    start_thread_mode_3();
+
     //lancement du selecteur
 	chThdCreateStatic(selector_thd_wa, sizeof(selector_thd_wa), HIGHPRIO, selector_thd, NULL);
+
 
     /* Infinite loop. */
     while (1) {
