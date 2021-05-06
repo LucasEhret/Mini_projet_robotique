@@ -153,7 +153,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 	uint8_t *img_buff_ptr;
 	uint8_t image[IMAGE_BUFFER_SIZE] = {0};
-	uint16_t lineWidth = 0;
 	uint8_t red_value = 0;
 	uint8_t blue_value = 0;
 
@@ -181,7 +180,7 @@ static THD_FUNCTION(ProcessImage, arg) {
     		}
 
     		//search for a line in the image and gets its width in pixels
-    		lineWidth = extract_line_width(image);
+    		extract_line_width(image);
 
     		if(send_to_computer){
     			//sends to the computer the image

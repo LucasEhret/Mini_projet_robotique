@@ -98,7 +98,7 @@ while True:
     while True:
         if keyboard.is_pressed(" "): # condition arret de la boucle de donnees
             break
-        clock.tick(15)  #25 boucles par seconde
+        clock.tick(15)  #15 boucles par seconde
         for event in pygame.event.get():
             if event.type == pygame.JOYAXISMOTION:
                 if event.axis < 2:
