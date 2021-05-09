@@ -9,7 +9,7 @@
 
 #include <process_image.h>
 
-#define NUMERO_LIGNE 200
+#define NUMERO_LIGNE 100
 
 
 static float distance_cm = 0;
@@ -102,7 +102,7 @@ uint16_t extract_line_width(uint8_t *buffer){
 	if(line_not_found){
 		begin = 0;
 		end = 0;
-		width = last_width;
+		width = 0;  ///last_width   !!!!!!!!!!!!!!!!ne permet pas de 'sauver' la trajectoire
 	}else{
 		last_width = width = (end - begin);
 		line_position = (begin + end)/2; //gives the line position.
@@ -170,13 +170,7 @@ static THD_FUNCTION(ProcessImage, arg) {
     			//takes nothing from the second byte
     			red_value = (uint8_t)img_buff_ptr[i]&0xF8;
     			blue_value = ((uint8_t)img_buff_ptr[i+1]&0x1F) << 3;
-    			//Prend la valeur mmin
-    			if(red_value < blue_value){
-    				image[i/2] = red_value;
-    			}
-    			else {
-    				image[i/2] = blue_value;
-    		    }
+    			image[i/2] = red_value + blue_value;
     		}
 
     		//search for a line in the image and gets its width in pixels
@@ -184,11 +178,11 @@ static THD_FUNCTION(ProcessImage, arg) {
 
     		if(send_to_computer){
     			//sends to the computer the image
-    //			SendUint8ToComputer(image, IMAGE_BUFFER_SIZE); //bluetooth
+//    			SendUint8ToComputer(image, IMAGE_BUFFER_SIZE); //bluetooth
     		}
     	}
     	else{
-    		chThdSleepMilliseconds(200);
+    		chThdSleepMilliseconds(50); //200
     	}
 
     }

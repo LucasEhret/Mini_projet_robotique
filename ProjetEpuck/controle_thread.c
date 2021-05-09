@@ -35,7 +35,7 @@
 //define mode 2
 #define SPEED_M2 				600
 #define SPEED_ACC_M2 			800
-#define ROTATION_COEFF_M2 		3
+#define ROTATION_COEFF_M2 		2.5
 #define DIST_THRESHOLD_M2		220
 
 //define mode 3
