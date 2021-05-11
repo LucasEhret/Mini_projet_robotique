@@ -12,7 +12,6 @@
 #define NUMERO_LIGNE 100
 
 
-static float distance_cm = 0;
 static uint16_t line_position = IMAGE_BUFFER_SIZE/2;	//middle
 static uint16_t width = 0;
 static bool send_to_computer = true;
@@ -21,6 +20,8 @@ static bool run_camera = false;
 //semaphore
 static BSEMAPHORE_DECL(image_ready_sem, TRUE);
 
+
+void SendUint8ToComputer(uint8_t* data, uint16_t size);
 
 void start_thread_camera(void) {
 	run_camera = true;
@@ -41,8 +42,6 @@ uint16_t extract_line_width(uint8_t *buffer){
 	uint8_t stop = 0, wrong_line = 0, line_not_found = 0;
 	uint32_t mean = 0;
 	width = 0;
-
-	static uint16_t last_width = PXTOCM/GOAL_DISTANCE;
 
 	//performs an average
 	for(uint16_t i = 0 ; i < IMAGE_BUFFER_SIZE ; i++){
@@ -102,9 +101,9 @@ uint16_t extract_line_width(uint8_t *buffer){
 	if(line_not_found){
 		begin = 0;
 		end = 0;
-		width = 0;  ///last_width   !!!!!!!!!!!!!!!!ne permet pas de 'sauver' la trajectoire
+		width = 0;
 	}else{
-		last_width = width = (end - begin);
+		width = end - begin;
 		line_position = (begin + end)/2; //gives the line position.
 	}
 
@@ -178,13 +177,12 @@ static THD_FUNCTION(ProcessImage, arg) {
 
     		if(send_to_computer){
     			//sends to the computer the image
-//    			SendUint8ToComputer(image, IMAGE_BUFFER_SIZE); //bluetooth
+    			SendUint8ToComputer(image, IMAGE_BUFFER_SIZE); //bluetooth
     		}
     	}
     	else{
-    		chThdSleepMilliseconds(50); //200
+    		chThdSleepMilliseconds(50);
     	}
-
     }
 }
 
@@ -195,9 +193,6 @@ void SendUint8ToComputer(uint8_t* data, uint16_t size)
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
 }
 
-float get_distance_cm(void){
-	return distance_cm;
-}
 
 uint16_t get_line_position(void){
 	return line_position;

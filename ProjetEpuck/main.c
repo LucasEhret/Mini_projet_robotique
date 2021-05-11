@@ -12,7 +12,6 @@
 #include <camera/po8030.h>
 #include <chprintf.h>
 
-#include <pi_regulator.h>
 #include <process_image.h>
 #include <leds.h>
 #include <selector.h>
@@ -20,8 +19,6 @@
 #include <sensors/proximity.h>
 #include <audio/play_melody.h>
 #include "spi_comm.h"
-#include "audio/play_sound_file.h"
-#include "sensors/battery_level.h"
 
 #define WORKSPACE_AREA			1024
 
@@ -51,7 +48,7 @@ static THD_FUNCTION(selector_thd, arg)
 						case MODE1: //mode 1 : conduite respectueuse
 							run_thread_mode_1();
 							break;
-						case MODE2: //mode 2 : mode Tom Cruise
+						case MODE2: //mode 2 : mode conduite rapide
 							run_thread_mode_2();
 							break;
 						case MODE3: //mode 3 : mode manette

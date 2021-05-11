@@ -24,18 +24,18 @@
 #define NB_CAPTEUR				8
 
 //define mode 0
-#define DIST_THRESHOLD_JEU_M0 	150
+#define DIST_THRESHOLD_JEU_M0 	100
 
 //define mode 1
-#define DIST_THRESHOLD_M1 		250
+#define DIST_THRESHOLD_M1 		220
 #define SPEED_M1 				400
-#define ROTATION_COEFF_M1 		2
+#define ROTATION_COEFF_M1 		2.2
 #define WIDTH_THRESHOLD_M1 		100
 
 //define mode 2
 #define SPEED_M2 				600
 #define SPEED_ACC_M2 			800
-#define ROTATION_COEFF_M2 		2.5
+#define ROTATION_COEFF_M2 		2.7
 #define DIST_THRESHOLD_M2		220
 
 //define mode 3
@@ -295,7 +295,7 @@ static THD_FUNCTION(thd_m3, arg)
             	if(size == NB_ELEMENTS_CONTROLLER){
             		//prise en compte du boost ou vitesse normale
             		coeff_speed = SPEED_M3;
-            		if(boost_ready && data_from_computer[GACHETTE] == 1){
+            		if(boost_ready && (data_from_computer[GACHETTE] == 1 || data_from_computer[GACHETTE] == 2)){
             			boost_ready = false;
             			boost_on = true;
             			timer_boost = 0;
@@ -484,7 +484,7 @@ void run_thread_mode_1(void){
 void run_thread_mode_2(void){
 	start_thread_camera();
 	thd_mode_2 = chThdCreateStatic(thd_m2_camera_wa, sizeof(thd_m2_camera_wa), NORMALPRIO, thd_m2_camera, NULL);
-	playMelody(IMPOSSIBLE_MISSION, ML_FORCE_CHANGE, NULL);
+//	playMelody(IMPOSSIBLE_MISSION, ML_FORCE_CHANGE, NULL);
 }
 
 
