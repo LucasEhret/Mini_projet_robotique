@@ -13,7 +13,7 @@ extern "C" {
 //constants for the differents parts of the project
 #define IMAGE_BUFFER_SIZE		640
 #define WIDTH_SLOPE				5
-#define MIN_LINE_WIDTH			30
+#define MIN_LINE_WIDTH			50
 #define ROTATION_THRESHOLD		10
 #define PXTOCM					1570.0f //experimental value
 #define MAX_DISTANCE 			25.0f

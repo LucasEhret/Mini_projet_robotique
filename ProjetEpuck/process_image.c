@@ -14,7 +14,7 @@
 
 static uint16_t line_position = IMAGE_BUFFER_SIZE/2;	//middle
 static uint16_t width = 0;
-static bool send_to_computer = true;
+static bool send_to_computer = false;
 static bool run_camera = false;
 
 //semaphore
@@ -105,6 +105,8 @@ uint16_t extract_line_width(uint8_t *buffer){
 	}else{
 		width = end - begin;
 		line_position = (begin + end)/2; //gives the line position.
+		buffer[begin] = 255;
+		buffer[end] = 255;
 	}
 
 	//sets a maximum width or returns the measured width
@@ -169,7 +171,12 @@ static THD_FUNCTION(ProcessImage, arg) {
     			//takes nothing from the second byte
     			red_value = (uint8_t)img_buff_ptr[i]&0xF8;
     			blue_value = ((uint8_t)img_buff_ptr[i+1]&0x1F) << 3;
-    			image[i/2] = red_value + blue_value;
+    			if (red_value + blue_value < 256){
+    				image[i/2] = red_value + blue_value;
+    			}
+    			else{
+    				image[i/2] = 255;
+    			}
     		}
 
     		//search for a line in the image and gets its width in pixels

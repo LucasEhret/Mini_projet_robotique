@@ -30,13 +30,14 @@
 #define DIST_THRESHOLD_M1 		220
 #define SPEED_M1 				400
 #define ROTATION_COEFF_M1 		2.2
-#define WIDTH_THRESHOLD_M1 		100
+#define WIDTH_THRESHOLD_M1 		50
 
 //define mode 2
 #define SPEED_M2 				600
 #define SPEED_ACC_M2 			800
 #define ROTATION_COEFF_M2 		2.7
 #define DIST_THRESHOLD_M2		220
+#define WIDTH_THRESHOLD_M2 		50
 
 //define mode 3
 #define NB_ELEMENTS_CONTROLLER 	4
@@ -61,6 +62,7 @@ typedef enum {
 void pause_thread_manette(void);
 
 static bool run_manette = false;
+static bool play_music = false;
 
 
 //thread du mode 0 :
@@ -222,7 +224,7 @@ static THD_FUNCTION(thd_m2_camera, arg)
 		if(abs(speed_correction) < ROTATION_THRESHOLD){
 			speed_correction = 0;
 		}
-		if(get_line_width() > WIDTH_THRESHOLD_M1){
+		if(get_line_width() > WIDTH_THRESHOLD_M2){
 			//applies the speed and the correction for the rotation
 			right_motor_set_speed(speed_right - ROTATION_COEFF_M2 * speed_correction);
 			left_motor_set_speed(speed_left + ROTATION_COEFF_M2 * speed_correction);
@@ -281,7 +283,7 @@ static THD_FUNCTION(thd_m3, arg)
         		collision = true;
         		//Instruction en cas de collision
         		set_body_led(ON);
-        		playMelody(MARIO_DEATH, ML_FORCE_CHANGE, NULL);
+        		if(play_music) playMelody(MARIO_DEATH, ML_FORCE_CHANGE, NULL);
         		left_motor_set_speed(SPEED_DEATH_M3);
         		right_motor_set_speed(-SPEED_DEATH_M3);
         		compteur = 0;
@@ -484,7 +486,7 @@ void run_thread_mode_1(void){
 void run_thread_mode_2(void){
 	start_thread_camera();
 	thd_mode_2 = chThdCreateStatic(thd_m2_camera_wa, sizeof(thd_m2_camera_wa), NORMALPRIO, thd_m2_camera, NULL);
-//	playMelody(IMPOSSIBLE_MISSION, ML_FORCE_CHANGE, NULL);
+	if (play_music) playMelody(IMPOSSIBLE_MISSION, ML_FORCE_CHANGE, NULL);
 }
 
 
